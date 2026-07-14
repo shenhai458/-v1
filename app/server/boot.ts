@@ -14,7 +14,11 @@ export function createApp() {
 
   app.use(bodyLimit({ maxSize: 50 * 1024 * 1024 }));
   app.use("/api/*", async (c, next) => {
-    console.log(`[${c.req.method}] ${c.req.url}`);
+    const info = { method: c.req.method, url: c.req.url, path: c.req.path };
+    console.log(JSON.stringify(info));
+    if (c.req.path === "/api/debug") {
+      return c.json({ received: info, routes: ["/api/health", "/api/trpc/*"] });
+    }
     await next();
   });
 
