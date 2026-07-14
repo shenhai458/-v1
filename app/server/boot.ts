@@ -30,6 +30,15 @@ export function createApp() {
       createContext,
     });
   });
+
+  app.use("/api/rpc/*", async (c) => {
+    return fetchRequestHandler({
+      endpoint: "/api/rpc",
+      req: c.req.raw,
+      router: appRouter,
+      createContext,
+    });
+  });
   app.get("/api/health", (c) => c.json({ status: "ok" }));
   app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
 
