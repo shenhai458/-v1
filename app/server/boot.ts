@@ -19,12 +19,7 @@ export function createApp() {
       return await next();
     }
     if (path.startsWith("/api/trpc")) {
-      return fetchRequestHandler({
-        endpoint: "/api/trpc",
-        req: c.req.raw,
-        router: appRouter,
-        createContext,
-      });
+      return c.json({ trpc: true, path, method: c.req.method });
     }
     return c.json({ error: "Not Found" }, 404);
   });
