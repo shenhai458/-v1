@@ -1,8 +1,9 @@
 import { handle } from "@hono/node-server/vercel";
-import { createApp, seedDatabase } from "../server/boot";
+import { Hono } from "hono";
 
-const app = createApp();
+const app = new Hono();
 
-seedDatabase().catch((err) => console.error("Seed error:", err));
+app.get("/api/health", (c) => c.json({ status: "ok", from: "hono-minimal" }));
+app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
 
 export default handle(app);
