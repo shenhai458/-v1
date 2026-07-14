@@ -14,30 +14,22 @@ export function createApp() {
 
   app.use(bodyLimit({ maxSize: 50 * 1024 * 1024 }));
   app.use("/api/*", async (c, next) => {
-    const info = { method: c.req.method, url: c.req.url, path: c.req.path };
-    console.log(JSON.stringify(info));
-    return c.json({ received: info, routes: ["/api/health", "/api/trpc/*", "/api/rpc/*"] });
+    const path = c.req.path;
+    if (path === "/api/health") {
+      return await next();
+    }
+    if (path.startsWith("/api/trpc")) {
+      return fetchRequestHandler({
+        endpoint: "/api/trpc",
+        req: c.req.raw,
+        router: appRouter,
+        createContext,
+      });
+    }
+    return c.json({ error: "Not Found" }, 404);
   });
 
-  app.use("/api/trpc/*", async (c) => {
-    return fetchRequestHandler({
-      endpoint: "/api/trpc",
-      req: c.req.raw,
-      router: appRouter,
-      createContext,
-    });
-  });
-
-  app.use("/api/rpc/*", async (c) => {
-    return fetchRequestHandler({
-      endpoint: "/api/rpc",
-      req: c.req.raw,
-      router: appRouter,
-      createContext,
-    });
-  });
   app.get("/api/health", (c) => c.json({ status: "ok" }));
-  app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
 
   return app;
 }
