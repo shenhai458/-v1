@@ -1,3 +1,6 @@
-export default function handler(req, res) {
-  return res.status(200).json({ hello: "world", time: Date.now() });
+export default function handler(request) {
+  return new Response(JSON.stringify({ hello: "world", time: Date.now() }), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
 }
