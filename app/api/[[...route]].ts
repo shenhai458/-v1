@@ -1,8 +1,8 @@
-// Minimal TypeScript catch-all test - no imports
-export default function handler(req: any, res: any) {
-  res.status(200).json({
-    status: "ok",
-    url: req.url,
-    method: req.method,
-  });
-}
+import { handle } from "@hono/node-server/vercel";
+import { createApp, seedDatabase } from "../server/boot";
+
+const app = createApp();
+
+seedDatabase().catch((err) => console.error("Seed error:", err));
+
+export default handle(app);
