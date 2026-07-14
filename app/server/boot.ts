@@ -13,6 +13,11 @@ export function createApp() {
   const app = new Hono<{ Bindings: HttpBindings }>();
 
   app.use(bodyLimit({ maxSize: 50 * 1024 * 1024 }));
+  app.use("/api/*", async (c, next) => {
+    console.log(`[${c.req.method}] ${c.req.url}`);
+    await next();
+  });
+
   app.use("/api/trpc/*", async (c) => {
     return fetchRequestHandler({
       endpoint: "/api/trpc",
