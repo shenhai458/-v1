@@ -1,7 +1,4 @@
 {
-  "buildCommand": "npx drizzle-kit push && npx vite build",
-  "outputDirectory": "dist/public",
-  "rewrites": [
-    { "source": "/((?!api).*)", "destination": "/index.html" }
-  ]
+  "buildCommand": "npx drizzle-kit push && npx vite build && cp dist/public/index.html dist/public/404.html",
+  "outputDirectory": "dist/public"
 }
