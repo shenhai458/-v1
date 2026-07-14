@@ -1,4 +1,14 @@
 {
-  "buildCommand": "npx drizzle-kit push && npx vite build && cp dist/public/index.html dist/public/404.html",
-  "outputDirectory": "dist/public"
+  "buildCommand": "npx drizzle-kit push; npx vite build && cp dist/public/index.html dist/public/404.html",
+  "outputDirectory": "dist/public",
+  "functions": {
+    "api/[[...route]].ts": {
+      "memory": 512,
+      "maxDuration": 30
+    },
+    "api/hello.ts": {
+      "memory": 128,
+      "maxDuration": 10
+    }
+  }
 }
