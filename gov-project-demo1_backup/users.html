@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>政府项目申报管理系统 - 用户管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        .sidebar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            backdrop-filter: blur(10px);
+        }
+        .nav-item {
+            transition: all 0.3s ease;
+        }
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-left: 4px solid #ffffff;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .modal {
+            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.5);
+        }
+        .modal-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        .role-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .role-admin { background-color: #fef3c7; color: #92400e; }
+        .role-user { background-color: #dbeafe; color: #1e40af; }
+        .role-guest { background-color: #f3f4f6; color: #374151; }
+        .status-active { background-color: #d1fae5; color: #065f46; }
+        .status-inactive { background-color: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <div class="sidebar w-64 h-screen fixed left-0 top-0 z-10">
+        <div class="p-6">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-building text-white text-2xl"></i>
+                </div>
+                <h2 class="text-white text-xl font-bold">项目管理系统</h2>
+            </div>
+            
+            <nav class="space-y-2">
+                <a href="index.html" class="nav-item flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-tachometer-alt mr-3"></i>
+                    <span>仪表板</span>
+                </a>
+                <a href="projects.html" class="nav-item flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-list-alt mr-3"></i>
+                    <span>项目管理</span>
+                </a>
+                <a href="analytics.html" class="nav-item flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-chart-bar mr-3"></i>
+                    <span>数据分析</span>
+                </a>
+                <a href="users.html" class="nav-item active flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-users mr-3"></i>
+                    <span>用户管理</span>
+                </a>
+                <a href="settings.html" class="nav-item flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-cog mr-3"></i>
+                    <span>系统设置</span>
+                </a>
+            </nav>
+        </div>
+        
+        <div class="absolute bottom-6 left-6 right-6">
+            <div class="bg-white bg-opacity-10 rounded-lg p-4">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-user text-white"></i>
+                    </div>
+                    <div>
+                        <p class="text-white text-sm font-medium" id="currentUser">管理员</p>
+                        <p class="text-gray-200 text-xs">在线</p>
+                    </div>
+                </div>
+                <button onclick="logout()" class="w-full mt-3 bg-red-500 bg-opacity-80 hover:bg-opacity-100 text-white py-2 rounded-lg transition-all">
+                    <i class="fas fa-sign-out-alt mr-2"></i>退出登录
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主内容区域 -->
+    <div class="flex-1 ml-64 p-6">
+        <!-- 顶部导航 -->
+        <div class="bg-white rounded-2xl p-4 mb-6 shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">用户管理</h1>
+                    <p class="text-gray-600">管理系统用户和权限</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <input type="text" id="searchInput" placeholder="搜索用户..." 
+                               class="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                    <button onclick="openAddModal()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                        <i class="fas fa-plus mr-2"></i>添加用户
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 统计卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <div class="bg-white rounded-2xl p-6 shadow-lg card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">总用户数</p>
+                        <p class="text-2xl font-bold text-gray-800" id="totalUsers">24</p>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-users text-blue-500 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-2xl p-6 shadow-lg card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">管理员</p>
+                        <p class="text-2xl font-bold text-gray-800" id="adminCount">3</p>
+                    </div>
+                    <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user-shield text-yellow-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-2xl p-6 shadow-lg card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">普通用户</p>
+                        <p class="text-2xl font-bold text-gray-800" id="userCount">18</p>
+                    </div>
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-green-500 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-2xl p-6 shadow-lg card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">在线用户</p>
+                        <p class="text-2xl font-bold text-gray-800" id="onlineUsers">12</p>
+                    </div>
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-circle text-green-500 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 用户列表 -->
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-800">用户列表</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用户ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用户名</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">真实姓名</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">角色</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">部门</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">最后登录</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- 用户数据将通过JavaScript动态加载 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 分页 -->
+        <div class="flex items-center justify-between mt-6">
+            <div class="text-sm text-gray-700">
+                显示第 <span id="pageStart">1</span> 到 <span id="pageEnd">10</span> 条，共 <span id="totalItems">24</span> 条记录
+            </div>
+            <div class="flex items-center space-x-2">
+                <button id="prevPage" class="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50 disabled:opacity-50" disabled>
+                    上一页
+                </button>
+                <span id="currentPage" class="px-3 py-1 bg-blue-500 text-white rounded-md text-sm">1</span>
+                <button id="nextPage" class="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50">
+                    下一页
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加/编辑用户模态框 -->
+    <div id="userModal" class="modal fixed inset-0 z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="modal-content rounded-2xl p-6 w-full max-w-md">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 id="modalTitle" class="text-xl font-semibold text-gray-800">添加用户</h3>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <form id="userForm" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                            <input type="text" id="username" class="w-full border border-gray-300 rounded-lg px-3 py-2" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">真实姓名</label>
+                            <input type="text" id="realName" class="w-full border border-gray-300 rounded-lg px-3 py-2" required>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
+                        <input type="email" id="email" class="w-full border border-gray-300 rounded-lg px-3 py-2" required>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">角色</label>
+                            <select id="role" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                <option value="user">普通用户</option>
+                                <option value="admin">管理员</option>
+                                <option value="guest">访客</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">部门</label>
+                            <select id="department" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                <option value="科技局">科技局</option>
+                                <option value="发改委">发改委</option>
+                                <option value="人社局">人社局</option>
+                                <option value="商务局">商务局</option>
+                                <option value="工信局">工信局</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                        <input type="password" id="password" class="w-full border border-gray-300 rounded-lg px-3 py-2" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">确认密码</label>
+                        <input type="password" id="confirmPassword" class="w-full border border-gray-300 rounded-lg px-3 py-2" required>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4 pt-4">
+                        <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                            <i class="fas fa-save mr-2"></i>保存
+                        </button>
+                        <button type="button" onclick="closeModal()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                            <i class="fas fa-times mr-2"></i>取消
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 检查登录状态
+        if (localStorage.getItem('isLoggedIn') !== 'true') {
+            window.location.href = 'login.html';
+        }
+
+        // 设置当前用户信息
+        document.getElementById('currentUser').textContent = localStorage.getItem('username') || '管理员';
+
+        // 用户数据
+        let usersData = [
+            { id: 1, username: 'admin', realName: '系统管理员', email: 'admin@example.com', role: 'admin', department: '科技局', status: 'active', lastLogin: '2025-01-15 14:30:00' },
+            { id: 2, username: 'lianhaibin', realName: '连海滨', email: 'lianhaibin@example.com', role: 'user', department: '发改委', status: 'active', lastLogin: '2025-01-15 10:15:00' },
+            { id: 3, username: 'lufuxing', realName: '卢福星', email: 'lufuxing@example.com', role: 'user', department: '人社局', status: 'active', lastLogin: '2025-01-14 16:20:00' },
+            { id: 4, username: 'linzhirong', realName: '林智荣', email: 'linzhirong@example.com', role: 'user', department: '商务局', status: 'inactive', lastLogin: '2025-01-10 09:30:00' },
+            { id: 5, username: 'zhangsan', realName: '张三', email: 'zhangsan@example.com', role: 'user', department: '工信局', status: 'active', lastLogin: '2025-01-15 11:45:00' },
+            { id: 6, username: 'lisi', realName: '李四', email: 'lisi@example.com', role: 'guest', department: '其他', status: 'active', lastLogin: '2025-01-14 15:30:00' },
+            { id: 7, username: 'wangwu', realName: '王五', email: 'wangwu@example.com', role: 'user', department: '科技局', status: 'active', lastLogin: '2025-01-15 13:20:00' },
+            { id: 8, username: 'zhaoliu', realName: '赵六', email: 'zhaoliu@example.com', role: 'user', department: '发改委', status: 'inactive', lastLogin: '2025-01-12 14:10:00' },
+            { id: 9, username: 'sunqi', realName: '孙七', email: 'sunqi@example.com', role: 'user', department: '人社局', status: 'active', lastLogin: '2025-01-15 09:15:00' },
+            { id: 10, username: 'zhouba', realName: '周八', email: 'zhouba@example.com', role: 'admin', department: '商务局', status: 'active', lastLogin: '2025-01-15 16:45:00' }
+        ];
+
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let filteredData = [...usersData];
+
+        // 渲染用户表格
+        function renderUsersTable() {
+            const tbody = document.getElementById('usersTableBody');
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageData = filteredData.slice(startIndex, endIndex);
+
+            tbody.innerHTML = pageData.map(user => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.id}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-user text-gray-600 text-sm"></i>
+                            </div>
+                            <div class="text-sm font-medium text-gray-900">${user.username}</div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.realName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="role-badge role-${user.role}">
+                            ${user.role === 'admin' ? '管理员' : user.role === 'user' ? '普通用户' : '访客'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.department}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="role-badge status-${user.status}">
+                            ${user.status === 'active' ? '活跃' : '禁用'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${user.lastLogin}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button onclick="editUser(${user.id})" class="text-blue-600 hover:text-blue-900 mr-3">
+                            <i class="fas fa-edit mr-1"></i>编辑
+                        </button>
+                        <button onclick="toggleUserStatus(${user.id})" class="text-green-600 hover:text-green-900 mr-3">
+                            <i class="fas fa-toggle-on mr-1"></i>${user.status === 'active' ? '禁用' : '启用'}
+                        </button>
+                        <button onclick="deleteUser(${user.id})" class="text-red-600 hover:text-red-900">
+                            <i class="fas fa-trash mr-1"></i>删除
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            updatePagination();
+        }
+
+        // 更新分页
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage + 1;
+            const endIndex = Math.min(currentPage * itemsPerPage, filteredData.length);
+
+            document.getElementById('pageStart').textContent = startIndex;
+            document.getElementById('pageEnd').textContent = endIndex;
+            document.getElementById('totalItems').textContent = filteredData.length;
+            document.getElementById('currentPage').textContent = currentPage;
+
+            document.getElementById('prevPage').disabled = currentPage === 1;
+            document.getElementById('nextPage').disabled = currentPage === totalPages;
+        }
+
+        // 搜索功能
+        function searchUsers() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            filteredData = usersData.filter(user => 
+                user.username.toLowerCase().includes(searchTerm) ||
+                user.realName.toLowerCase().includes(searchTerm) ||
+                user.email.toLowerCase().includes(searchTerm) ||
+                user.department.toLowerCase().includes(searchTerm)
+            );
+
+            currentPage = 1;
+            renderUsersTable();
+        }
+
+        // 打开添加模态框
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = '添加用户';
+            document.getElementById('userForm').reset();
+            document.getElementById('userModal').classList.remove('hidden');
+        }
+
+        // 关闭模态框
+        function closeModal() {
+            document.getElementById('userModal').classList.add('hidden');
+        }
+
+        // 编辑用户
+        function editUser(id) {
+            const user = usersData.find(u => u.id === id);
+            if (user) {
+                document.getElementById('modalTitle').textContent = '编辑用户';
+                document.getElementById('username').value = user.username;
+                document.getElementById('realName').value = user.realName;
+                document.getElementById('email').value = user.email;
+                document.getElementById('role').value = user.role;
+                document.getElementById('department').value = user.department;
+                
+                document.getElementById('userModal').classList.remove('hidden');
+            }
+        }
+
+        // 切换用户状态
+        function toggleUserStatus(id) {
+            const user = usersData.find(u => u.id === id);
+            if (user) {
+                user.status = user.status === 'active' ? 'inactive' : 'active';
+                filteredData = filteredData.map(u => u.id === id ? user : u);
+                renderUsersTable();
+                showNotification(`用户 ${user.username} 已${user.status === 'active' ? '启用' : '禁用'}`, 'success');
+            }
+        }
+
+        // 删除用户
+        function deleteUser(id) {
+            const user = usersData.find(u => u.id === id);
+            if (user && confirm(`确定要删除用户 ${user.username} 吗？`)) {
+                usersData = usersData.filter(u => u.id !== id);
+                filteredData = filteredData.filter(u => u.id !== id);
+                renderUsersTable();
+                showNotification('用户已删除', 'success');
+            }
+        }
+
+        // 表单提交
+        document.getElementById('userForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (password !== confirmPassword) {
+                showNotification('两次输入的密码不一致！', 'error');
+                return;
+            }
+
+            const formData = {
+                username: document.getElementById('username').value,
+                realName: document.getElementById('realName').value,
+                email: document.getElementById('email').value,
+                role: document.getElementById('role').value,
+                department: document.getElementById('department').value,
+                password: password
+            };
+
+            // 这里应该保存数据到后端
+            showNotification('用户保存成功！', 'success');
+            closeModal();
+        });
+
+        // 通知函数
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg text-white ${
+                type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // 事件监听器
+        document.getElementById('searchInput').addEventListener('input', searchUsers);
+
+        document.getElementById('prevPage').addEventListener('click', function() {
+            if (currentPage > 1) {
+                currentPage--;
+                renderUsersTable();
+            }
+        });
+
+        document.getElementById('nextPage').addEventListener('click', function() {
+            const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderUsersTable();
+            }
+        });
+
+        // 退出登录
+        function logout() {
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('username');
+            localStorage.removeItem('role');
+            window.location.href = 'login.html';
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            renderUsersTable();
+        });
+    </script>
+</body>
+</html>

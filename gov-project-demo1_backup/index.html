@@ -1,0 +1,1355 @@
+<!DOCTYPE html><html lang="zh-CN"><head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>政府项目申报管理系统 - 仪表板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        .sidebar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            backdrop-filter: blur(10px);
+        }
+        .nav-item {
+            transition: all 0.3s ease;
+        }
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-left: 4px solid #ffffff;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .progress-bar {
+            background: linear-gradient(90deg, #10b981, #059669);
+        }
+        .chart-container {
+            height: 300px;
+        }
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .action-btn {
+            transition: all 0.3s ease;
+        }
+        .action-btn:hover {
+            transform: translateY(-2px);
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+        .notification.show {
+            transform: translateX(0);
+        }
+        .notification.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        .notification.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        .notification.info {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        }
+        .data-sync-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            margin-left: 8px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+<script src="https://statics.moonshot.cn/sdk/preview-widgets.min.js" defer=""></script></head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <div class="sidebar w-64 h-screen fixed left-0 top-0 z-10">
+        <div class="p-6">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-building text-white text-2xl"></i>
+                </div>
+                <h2 class="text-white text-xl font-bold">项目管理系统</h2>
+            </div>
+            
+            <nav class="space-y-2">
+                <a href="index.html" class="nav-item active flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-tachometer-alt mr-3"></i>
+                    <span>仪表板</span>
+                </a>
+                <a href="projects.html" class="nav-item flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-list-alt mr-3"></i>
+                    <span>项目管理</span>
+                </a>
+                <a href="analytics.html" class="nav-item flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-chart-bar mr-3"></i>
+                    <span>数据分析</span>
+                </a>
+                <a href="users.html" class="nav-item flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-users mr-3"></i>
+                    <span>用户管理</span>
+                </a>
+                <a href="settings.html" class="nav-item flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-cog mr-3"></i>
+                    <span>系统设置</span>
+                </a>
+            </nav>
+        </div>
+        
+        <div class="absolute bottom-6 left-6 right-6">
+            <div class="bg-white bg-opacity-10 rounded-lg p-4">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-user text-white"></i>
+                    </div>
+                    <div>
+                        <p class="text-white text-sm font-medium" id="currentUser">管理员</p>
+                        <p class="text-gray-200 text-xs">在线</p>
+                    </div>
+                </div>
+                <button onclick="logout()" class="w-full mt-3 bg-red-500 bg-opacity-80 hover:bg-opacity-100 text-white py-2 rounded-lg transition-all">
+                    <i class="fas fa-sign-out-alt mr-2"></i>退出登录
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主内容区域 -->
+    <div class="flex-1 ml-64 p-6">
+        <!-- 顶部导航 -->
+        <div class="bg-white rounded-2xl p-4 mb-6 shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">项目申报管理仪表板</h1>
+                    <p class="text-gray-600">实时监控项目进度与状态 - 完整数据勾稽版<span class="data-sync-indicator" title="数据实时同步中"></span></p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="openAddProjectModal()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors action-btn">
+                        <i class="fas fa-plus mr-2"></i>新建项目
+                    </button>
+                    <button onclick="syncAllData()" class="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-colors action-btn">
+                        <i class="fas fa-sync-alt mr-2"></i>同步数据
+                    </button>
+                    <button onclick="exportAllData()" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors action-btn">
+                        <i class="fas fa-download mr-2"></i>导出数据
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 数据同步状态 -->
+        <div id="syncStatus" class="hidden bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <div class="flex items-center">
+                <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                <span class="text-green-800">数据同步完成，所有模块已更新</span>
+            </div>
+        </div>
+
+        <!-- 统计卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <div class="stat-card rounded-2xl p-6 card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-white text-sm opacity-80">总项目数</p>
+                        <p class="text-white text-3xl font-bold" id="totalProjects">0</p>
+                        <p class="text-green-200 text-sm mt-1" id="projectChange">实时更新</p>
+                    </div>
+                    <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-list text-white text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card rounded-2xl p-6 card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-white text-sm opacity-80">进行中项目</p>
+                        <p class="text-white text-3xl font-bold" id="activeProjects">0</p>
+                        <p class="text-blue-200 text-sm mt-1" id="activeChange">实时更新</p>
+                    </div>
+                    <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-spinner text-white text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card rounded-2xl p-6 card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-white text-sm opacity-80">已完成项目</p>
+                        <p class="text-white text-3xl font-bold" id="completedProjects">0</p>
+                        <p class="text-green-200 text-sm mt-1" id="completedChange">实时更新</p>
+                    </div>
+                    <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-check-circle text-white text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card rounded-2xl p-6 card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-white text-sm opacity-80">总金额</p>
+                        <p class="text-white text-3xl font-bold" id="totalAmount">0万</p>
+                        <p class="text-yellow-200 text-sm mt-1" id="amountChange">实时更新</p>
+                    </div>
+                    <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-yen-sign text-white text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 图表区域 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- 项目状态分布图 -->
+            <div class="card rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        <i class="fas fa-chart-pie mr-2 text-blue-500"></i>项目状态分布
+                    </h3>
+                    <button onclick="refreshStatusChart()" class="text-blue-500 hover:text-blue-600 text-sm">
+                        <i class="fas fa-sync-alt mr-1"></i>刷新
+                    </button>
+                </div>
+                <div id="statusChart" class="chart-container"></div>
+            </div>
+            
+            <!-- 月度申报趋势图 -->
+            <div class="card rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        <i class="fas fa-chart-line mr-2 text-green-500"></i>月度申报趋势
+                    </h3>
+                    <button onclick="refreshTrendChart()" class="text-blue-500 hover:text-blue-600 text-sm">
+                        <i class="fas fa-sync-alt mr-1"></i>刷新
+                    </button>
+                </div>
+                <div id="trendChart" class="chart-container"></div>
+            </div>
+        </div>
+
+        <!-- 快速操作区域 -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- 最近添加的项目 -->
+            <div class="card rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        <i class="fas fa-clock mr-2 text-purple-500"></i>最近添加
+                    </h3>
+                    <button onclick="refreshRecentProjects()" class="text-blue-500 hover:text-blue-600 text-sm">
+                        <i class="fas fa-sync-alt mr-1"></i>刷新
+                    </button>
+                </div>
+                <div id="recentProjects" class="space-y-3">
+                    <!-- 最近项目将通过JavaScript动态加载 -->
+                </div>
+            </div>
+            
+            <!-- 即将到期的项目 -->
+            <div class="card rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        <i class="fas fa-exclamation-triangle mr-2 text-red-500"></i>即将到期
+                    </h3>
+                    <button onclick="refreshUpcomingDeadlines()" class="text-blue-500 hover:text-blue-600 text-sm">
+                        <i class="fas fa-sync-alt mr-1"></i>刷新
+                    </button>
+                </div>
+                <div id="upcomingDeadlines" class="space-y-3">
+                    <!-- 即将到期项目将通过JavaScript动态加载 -->
+                </div>
+            </div>
+            
+            <!-- 快速统计 -->
+            <div class="card rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        <i class="fas fa-chart-bar mr-2 text-indigo-500"></i>快速统计
+                    </h3>
+                    <button onclick="refreshQuickStats()" class="text-blue-500 hover:text-blue-600 text-sm">
+                        <i class="fas fa-sync-alt mr-1"></i>刷新
+                    </button>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">本月新增</span>
+                        <span class="font-semibold text-blue-600" id="thisMonthProjects">0</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">本月完成</span>
+                        <span class="font-semibold text-green-600" id="thisMonthCompleted">0</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">成功率</span>
+                        <span class="font-semibold text-purple-600" id="successRate">0%</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">平均处理时间</span>
+                        <span class="font-semibold text-orange-600" id="avgProcessTime">0天</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 项目进度表格 -->
+        <div class="card rounded-2xl p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">
+                    <i class="fas fa-tasks mr-2 text-purple-500"></i>项目列表
+                </h3>
+                <div class="flex items-center space-x-2">
+                    <input type="text" id="searchProjects" placeholder="搜索项目..." class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                    <select id="statusFilter" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">全部状态</option>
+                        <option value="OK">已完成</option>
+                        <option value="进行中">进行中</option>
+                        <option value="未通过">未通过</option>
+                        <option value="待审核">待审核</option>
+                    </select>
+                    <button onclick="refreshProjectTable()" class="text-blue-500 hover:text-blue-600 text-sm">
+                        <i class="fas fa-sync-alt mr-1"></i>刷新
+                    </button>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">项目名称</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">对接部门</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">申报金额</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">截止时间</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">状态</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">申报人</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="projectTable" class="divide-y divide-gray-200">
+                        <!-- 项目数据将通过JavaScript动态加载 -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="flex items-center justify-between mt-4">
+                <div class="text-sm text-gray-700">
+                    显示第 <span id="pageStart">1</span> 到 <span id="pageEnd">10</span> 条，共 <span id="totalItems">0</span> 条记录
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button id="prevPage" class="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50 disabled:opacity-50" disabled="">
+                        上一页
+                    </button>
+                    <span id="currentPage" class="px-3 py-1 bg-blue-500 text-white rounded-md text-sm">1</span>
+                    <button id="nextPage" class="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50">
+                        下一页
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 数据洞察面板 -->
+        <div class="card rounded-2xl p-6 mt-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                <i class="fas fa-lightbulb mr-2 text-yellow-500"></i>智能数据洞察
+            </h3>
+            <div id="insightsPanel" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- 洞察内容将通过JavaScript动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加/编辑项目模态框 -->
+    <div id="projectModal" class="fixed inset-0 z-50 hidden" style="backdrop-filter: blur(10px); background: rgba(0, 0, 0, 0.5);">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-2xl p-6 w-full max-w-2xl" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 id="modalTitle" class="text-xl font-semibold text-gray-800">新建项目</h3>
+                    <button onclick="closeProjectModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <form id="projectForm" class="space-y-4">
+                    <input type="hidden" id="projectId"/>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">项目名称 <span class="text-red-500">*</span></label>
+                            <input type="text" id="projectName" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required=""/>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">申报到期预警</label>
+                            <select id="warningLevel" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">正常</option>
+                                <option value="7天内">7天内结束</option>
+                                <option value="半个月">半个月结束</option>
+                                <option value="一个月">一个月结束</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">截止时间 <span class="text-red-500">*</span></label>
+                            <input type="date" id="deadline" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required=""/>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">对接部门 <span class="text-red-500">*</span></label>
+                            <select id="department" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required="">
+                                <option value="">请选择部门</option>
+                                <option value="厦门市科学技术局">厦门市科学技术局</option>
+                                <option value="发改委">发改委</option>
+                                <option value="人社局">人社局</option>
+                                <option value="商务局">商务局</option>
+                                <option value="工信局">工信局</option>
+                                <option value="厦门市强质办">厦门市强质办</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">申报金额</label>
+                            <input type="text" id="amount" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="如：100000或荣誉"/>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">状态 <span class="text-red-500">*</span></label>
+                            <select id="status" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="OK">已完成</option>
+                                <option value="进行中">进行中</option>
+                                <option value="未通过">未通过</option>
+                                <option value="待审核">待审核</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">申报时间</label>
+                            <input type="date" id="applyDate" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">到账日期</label>
+                            <input type="date" id="paymentDate" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">到账金额</label>
+                            <input type="text" id="paymentAmount" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="实际到账金额"/>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">申报人 <span class="text-red-500">*</span></label>
+                            <select id="applicant" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required="">
+                                <option value="">请选择申报人</option>
+                                <option value="连海滨">连海滨</option>
+                                <option value="卢福星">卢福星</option>
+                                <option value="林智荣">林智荣</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">申报通知网站</label>
+                        <input type="url" id="noticeUrl" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="http://example.com"/>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">公示链接</label>
+                        <input type="url" id="publicUrl" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="http://example.com"/>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">备注</label>
+                        <textarea id="notes" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="项目相关说明..."></textarea>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4 pt-4">
+                        <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                            <i class="fas fa-save mr-2"></i>保存
+                        </button>
+                        <button type="button" onclick="closeProjectModal()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                            <i class="fas fa-times mr-2"></i>取消
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 检查登录状态
+        if (localStorage.getItem('isLoggedIn') !== 'true') {
+            window.location.href = 'login.html';
+        }
+
+        // 设置当前用户信息
+        document.getElementById('currentUser').textContent = localStorage.getItem('username') || '管理员';
+
+        // 数据存储和管理
+        class ProjectManager {
+            constructor() {
+                this.projects = this.loadProjects();
+                this.currentPage = 1;
+                this.itemsPerPage = 10;
+                this.filteredProjects = [...this.projects];
+                this.charts = {};
+            }
+
+            loadProjects() {
+                const saved = localStorage.getItem('projectsData');
+                if (saved) {
+                    return JSON.parse(saved);
+                }
+                
+                // 初始数据
+                return [
+                    {
+                        id: 1,
+                        name: '2024年科技保险补贴',
+                        deadline: '2025-05-30',
+                        department: '厦门市科学技术局',
+                        amount: '4.18万',
+                        status: 'OK',
+                        applicant: '连海滨',
+                        warning: '',
+                        applyDate: '2025-05-20',
+                        paymentDate: '',
+                        paymentAmount: '',
+                        noticeUrl: 'http://sti.xm.gov.cn/xxgk/tzgg/202402/t20240202_2813564.htm',
+                        publicUrl: '',
+                        notes: '已改为系统提交，必须要保险期结束后申报。2025年3月14日以后线上提交申报。企业需在购买的科技保险到期后的一年内进行申请，补贴比例40%。咨询电话2051277。每年5月20日之前提交的是第一批'
+                    },
+                    {
+                        id: 2,
+                        name: '未来产业典型应用场景征集',
+                        deadline: '2025-01-10',
+                        department: '发改委',
+                        amount: '荣誉',
+                        status: '未通过',
+                        applicant: '连海滨',
+                        warning: '',
+                        applyDate: '2025-01-10',
+                        paymentDate: '',
+                        paymentAmount: '',
+                        noticeUrl: '',
+                        publicUrl: '',
+                        notes: '产业领域不相符'
+                    },
+                    {
+                        id: 3,
+                        name: '创业带动就业补贴—俊为',
+                        deadline: '2025-04-10',
+                        department: '人社局',
+                        amount: '1.9万',
+                        status: 'OK',
+                        applicant: '连海滨',
+                        warning: '',
+                        applyDate: '2025-04-10',
+                        paymentDate: '2025-07-25',
+                        paymentAmount: '19000',
+                        noticeUrl: 'https://mp.weixin.qq.com/s/TY__aerBwq8I3wtkQarvNg',
+                        publicUrl: '',
+                        notes: '第二季度，4月份重新申报'
+                    },
+                    {
+                        id: 4,
+                        name: '厦门市高质量人才基地申报',
+                        deadline: '2025-01-15',
+                        department: '商务局',
+                        amount: '荣誉',
+                        status: '未通过',
+                        applicant: '连海滨',
+                        warning: '',
+                        applyDate: '2025-01-15',
+                        paymentDate: '',
+                        paymentAmount: '',
+                        noticeUrl: 'https://mp.weixin.qq.com/s/DPRV6hiOlxUpiRLiDeMjBg',
+                        publicUrl: '',
+                        notes: '高层次人才少且竞争激烈，厦门一共入选十几家'
+                    },
+                    {
+                        id: 5,
+                        name: '2025年超长期国债申报',
+                        deadline: '2025-02-20',
+                        department: '发改委',
+                        amount: '796万',
+                        status: 'OK',
+                        applicant: '连海滨',
+                        warning: '',
+                        applyDate: '2025-02-20',
+                        paymentDate: '2025-07-31',
+                        paymentAmount: '7960000',
+                        noticeUrl: '',
+                        publicUrl: '',
+                        notes: '前期准备工作'
+                    }
+                ];
+            }
+
+            saveProjects() {
+                localStorage.setItem('projectsData', JSON.stringify(this.projects));
+                this.showSyncStatus();
+            }
+
+            showSyncStatus() {
+                const status = document.getElementById('syncStatus');
+                status.classList.remove('hidden');
+                setTimeout(() => {
+                    status.classList.add('hidden');
+                }, 3000);
+            }
+
+            addProject(project) {
+                project.id = this.projects.length > 0 ? Math.max(...this.projects.map(p => p.id)) + 1 : 1;
+                this.projects.push(project);
+                this.saveProjects();
+                this.updateFilteredProjects();
+                return project;
+            }
+
+            updateProject(id, updatedProject) {
+                const index = this.projects.findIndex(p => p.id === parseInt(id));
+                if (index !== -1) {
+                    updatedProject.id = parseInt(id);
+                    this.projects[index] = updatedProject;
+                    this.saveProjects();
+                    this.updateFilteredProjects();
+                    return updatedProject;
+                }
+                return null;
+            }
+
+            deleteProject(id) {
+                const index = this.projects.findIndex(p => p.id === parseInt(id));
+                if (index !== -1) {
+                    const deletedProject = this.projects.splice(index, 1)[0];
+                    this.saveProjects();
+                    this.updateFilteredProjects();
+                    return deletedProject;
+                }
+                return null;
+            }
+
+            updateFilteredProjects() {
+                this.filteredProjects = [...this.projects];
+                this.applyFilters();
+            }
+
+            applyFilters() {
+                const searchTerm = document.getElementById('searchProjects')?.value.toLowerCase() || '';
+                const statusFilter = document.getElementById('statusFilter')?.value || '';
+
+                this.filteredProjects = this.projects.filter(project => {
+                    const matchesSearch = project.name.toLowerCase().includes(searchTerm) || 
+                                        project.department.toLowerCase().includes(searchTerm) ||
+                                        project.applicant.toLowerCase().includes(searchTerm);
+                    const matchesStatus = !statusFilter || project.status === statusFilter;
+                    return matchesSearch && matchesStatus;
+                });
+
+                this.currentPage = 1;
+                this.renderProjectsTable();
+                this.updateStatistics();
+                this.updateCharts();
+                this.renderRecentProjects();
+                this.renderUpcomingDeadlines();
+                this.updateQuickStats();
+                this.updateInsights();
+            }
+
+            getProjectsForPage() {
+                const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+                const endIndex = startIndex + this.itemsPerPage;
+                return this.filteredProjects.slice(startIndex, endIndex);
+            }
+
+            getTotalPages() {
+                return Math.ceil(this.filteredProjects.length / this.itemsPerPage);
+            }
+
+            updateStatistics() {
+                const totalProjects = this.projects.length;
+                const activeProjects = this.projects.filter(p => p.status === '进行中').length;
+                const completedProjects = this.projects.filter(p => p.status === 'OK').length;
+                const totalAmount = this.projects
+                    .filter(p => p.amount && p.amount.includes('万'))
+                    .reduce((sum, p) => {
+                        const amount = parseFloat(p.amount.replace('万', ''));
+                        return sum + (isNaN(amount) ? 0 : amount);
+                    }, 0);
+
+                document.getElementById('totalProjects').textContent = totalProjects;
+                document.getElementById('activeProjects').textContent = activeProjects;
+                document.getElementById('completedProjects').textContent = completedProjects;
+                document.getElementById('totalAmount').textContent = totalAmount.toFixed(1) + '万';
+
+                // 更新变化指标
+                this.updateChangeIndicators();
+            }
+
+            updateChangeIndicators() {
+                const indicators = {
+                    projectChange: '实时更新',
+                    activeChange: '实时更新',
+                    completedChange: '实时更新',
+                    amountChange: '实时更新'
+                };
+
+                Object.entries(indicators).forEach(([id, value]) => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.textContent = value;
+                        element.className = 'text-green-200 text-sm mt-1';
+                    }
+                });
+            }
+
+            updateQuickStats() {
+                const currentMonth = new Date().getMonth();
+                const currentYear = new Date().getFullYear();
+                const thisMonthProjects = this.projects.filter(p => {
+                    const applyDate = new Date(p.applyDate);
+                    return applyDate.getMonth() === currentMonth && applyDate.getFullYear() === currentYear;
+                }).length;
+                const thisMonthCompleted = this.projects.filter(p => {
+                    const paymentDate = new Date(p.paymentDate);
+                    return p.status === 'OK' && paymentDate.getMonth() === currentMonth && paymentDate.getFullYear() === currentYear;
+                }).length;
+                const successRate = this.projects.length > 0 ? Math.round((this.projects.filter(p => p.status === 'OK').length / this.projects.length) * 100) : 0;
+                const avgProcessTime = this.calculateAvgProcessTime();
+
+                document.getElementById('thisMonthProjects').textContent = thisMonthProjects;
+                document.getElementById('thisMonthCompleted').textContent = thisMonthCompleted;
+                document.getElementById('successRate').textContent = successRate + '%';
+                document.getElementById('avgProcessTime').textContent = avgProcessTime + '天';
+            }
+
+            calculateAvgProcessTime() {
+                const completedProjects = this.projects.filter(p => 
+                    p.status === 'OK' && p.applyDate && p.paymentDate
+                );
+                
+                if (completedProjects.length === 0) return 0;
+
+                const totalDays = completedProjects.reduce((sum, project) => {
+                    const applyDate = new Date(project.applyDate);
+                    const paymentDate = new Date(project.paymentDate);
+                    const diffTime = Math.abs(paymentDate - applyDate);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    return sum + diffDays;
+                }, 0);
+
+                return Math.round(totalDays / completedProjects.length);
+            }
+
+            renderProjectsTable() {
+                const tbody = document.getElementById('projectTable');
+                const pageData = this.getProjectsForPage();
+
+                tbody.innerHTML = pageData.map(project => `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 text-sm text-gray-900">
+                            <div class="font-medium">${project.name}</div>
+                            ${project.warning ? `<div class="text-xs text-red-600 mt-1"><i class="fas fa-exclamation-triangle mr-1"></i>${project.warning}结束</div>` : ''}
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-600">${project.department}</td>
+                        <td class="px-4 py-3 text-sm text-gray-900 font-medium">${project.amount}</td>
+                        <td class="px-4 py-3 text-sm text-gray-900">${project.deadline}</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-1 text-xs rounded-full ${
+                                project.status === 'OK' ? 'bg-green-100 text-green-800' :
+                                project.status === '进行中' ? 'bg-blue-100 text-blue-800' :
+                                project.status === '未通过' ? 'bg-red-100 text-red-800' :
+                                'bg-yellow-100 text-yellow-800'
+                            }">
+                                ${project.status}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-900">${project.applicant}</td>
+                        <td class="px-4 py-3 text-sm font-medium">
+                            <button onclick="editProject(${project.id})" class="text-blue-600 hover:text-blue-900 mr-3" title="编辑">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteProject(${project.id})" class="text-red-600 hover:text-red-900 mr-3" title="删除">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button onclick="viewProject(${project.id})" class="text-green-600 hover:text-green-900" title="查看详情">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                this.updatePagination();
+            }
+
+            updatePagination() {
+                const totalPages = this.getTotalPages();
+                const startIndex = (this.currentPage - 1) * this.itemsPerPage + 1;
+                const endIndex = Math.min(this.currentPage * this.itemsPerPage, this.filteredProjects.length);
+
+                document.getElementById('pageStart').textContent = this.filteredProjects.length > 0 ? startIndex : 0;
+                document.getElementById('pageEnd').textContent = endIndex;
+                document.getElementById('totalItems').textContent = this.filteredProjects.length;
+                document.getElementById('currentPage').textContent = this.currentPage;
+
+                document.getElementById('prevPage').disabled = this.currentPage === 1;
+                document.getElementById('nextPage').disabled = this.currentPage === totalPages || totalPages === 0;
+            }
+
+            updateCharts() {
+                this.initStatusChart();
+                this.initTrendChart();
+            }
+
+            initStatusChart() {
+                const chart = echarts.init(document.getElementById('statusChart'));
+                const statusData = this.getStatusData();
+                
+                const option = {
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: '{a} <br/>{b}: {c} ({d}%)'
+                    },
+                    legend: {
+                        orient: 'vertical',
+                        left: 'left',
+                        textStyle: { fontSize: 12 }
+                    },
+                    series: [{
+                        name: '项目状态',
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        avoidLabelOverlap: false,
+                        label: { show: false },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: '18',
+                                fontWeight: 'bold'
+                            }
+                        },
+                        data: statusData
+                    }]
+                };
+                
+                chart.setOption(option);
+                this.charts.statusChart = chart;
+            }
+
+            initTrendChart() {
+                const chart = echarts.init(document.getElementById('trendChart'));
+                const trendData = this.getMonthlyTrendData();
+                
+                const option = {
+                    tooltip: { trigger: 'axis' },
+                    legend: {
+                        data: ['申报项目', '完成项目'],
+                        textStyle: { fontSize: 12 }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        boundaryGap: false,
+                        data: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
+                    },
+                    yAxis: { type: 'value' },
+                    series: [
+                        {
+                            name: '申报项目',
+                            type: 'line',
+                            smooth: true,
+                            itemStyle: { color: '#3b82f6' },
+                            areaStyle: { opacity: 0.3 },
+                            data: trendData.declared
+                        },
+                        {
+                            name: '完成项目',
+                            type: 'line',
+                            smooth: true,
+                            itemStyle: { color: '#10b981' },
+                            areaStyle: { opacity: 0.3 },
+                            data: trendData.completed
+                        }
+                    ]
+                };
+                
+                chart.setOption(option);
+                this.charts.trendChart = chart;
+            }
+
+            getStatusData() {
+                const statusCount = {};
+                this.projects.forEach(project => {
+                    statusCount[project.status] = (statusCount[project.status] || 0) + 1;
+                });
+
+                const colors = {
+                    'OK': '#10b981',
+                    '进行中': '#3b82f6',
+                    '未通过': '#ef4444',
+                    '待审核': '#f59e0b'
+                };
+
+                return Object.entries(statusCount).map(([status, count]) => ({
+                    value: count,
+                    name: status,
+                    itemStyle: { color: colors[status] || '#6b7280' }
+                }));
+            }
+
+            getMonthlyTrendData() {
+                const monthlyData = {
+                    declared: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    completed: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                };
+
+                this.projects.forEach(project => {
+                    if (project.applyDate) {
+                        const month = new Date(project.applyDate).getMonth();
+                        monthlyData.declared[month]++;
+                    }
+                    if (project.paymentDate && project.status === 'OK') {
+                        const month = new Date(project.paymentDate).getMonth();
+                        monthlyData.completed[month]++;
+                    }
+                });
+
+                return monthlyData;
+            }
+
+            renderRecentProjects() {
+                const container = document.getElementById('recentProjects');
+                const recentProjects = this.projects
+                    .sort((a, b) => new Date(b.applyDate) - new Date(a.applyDate))
+                    .slice(0, 5);
+
+                if (recentProjects.length === 0) {
+                    container.innerHTML = '<div class="text-sm text-gray-500 text-center py-4">暂无项目数据</div>';
+                    return;
+                }
+
+                container.innerHTML = recentProjects.map(project => `
+                    <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                        <div class="flex-1">
+                            <div class="text-sm font-medium text-gray-900">${project.name}</div>
+                            <div class="text-xs text-gray-500">${project.department}</div>
+                        </div>
+                        <span class="px-2 py-1 text-xs rounded-full ${
+                            project.status === 'OK' ? 'bg-green-100 text-green-800' :
+                            project.status === '进行中' ? 'bg-blue-100 text-blue-800' :
+                            project.status === '未通过' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
+                        }">
+                            ${project.status}
+                        </span>
+                    </div>
+                `).join('');
+            }
+
+            renderUpcomingDeadlines() {
+                const container = document.getElementById('upcomingDeadlines');
+                const now = new Date();
+                const upcomingProjects = this.projects
+                    .filter(project => {
+                        const deadline = new Date(project.deadline);
+                        const diffTime = deadline - now;
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        return diffDays > 0 && diffDays <= 30;
+                    })
+                    .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
+                    .slice(0, 5);
+
+                if (upcomingProjects.length === 0) {
+                    container.innerHTML = '<div class="text-sm text-gray-500 text-center py-4">暂无即将到期的项目</div>';
+                    return;
+                }
+
+                container.innerHTML = upcomingProjects.map(project => {
+                    const deadline = new Date(project.deadline);
+                    const diffTime = deadline - now;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    return `
+                        <div class="flex items-center justify-between p-2 bg-red-50 rounded-lg">
+                            <div class="flex-1">
+                                <div class="text-sm font-medium text-gray-900">${project.name}</div>
+                                <div class="text-xs text-red-600">${diffDays}天后到期</div>
+                            </div>
+                            <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">
+                                ${project.status}
+                            </span>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            updateInsights() {
+                const insights = this.generateInsights();
+                const container = document.getElementById('insightsPanel');
+                
+                container.innerHTML = insights.map(insight => `
+                    <div class="bg-${insight.color}-50 border border-${insight.color}-200 rounded-lg p-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-${insight.icon} text-${insight.color}-500 mr-2"></i>
+                            <h4 class="text-sm font-medium text-${insight.color}-800">${insight.title}</h4>
+                        </div>
+                        <p class="text-sm text-${insight.color}-700 mt-2">${insight.content}</p>
+                    </div>
+                `).join('');
+            }
+
+            generateInsights() {
+                const insights = [];
+                const totalProjects = this.projects.length;
+                const completedProjects = this.projects.filter(p => p.status === 'OK').length;
+                const successRate = totalProjects > 0 ? (completedProjects / totalProjects) * 100 : 0;
+
+                // 成功率洞察
+                if (successRate >= 80) {
+                    insights.push({
+                        title: '优秀表现',
+                        content: `项目成功率达到${successRate.toFixed(1)}%，表现优秀！`,
+                        icon: 'trophy',
+                        color: 'green'
+                    });
+                } else if (successRate < 50) {
+                    insights.push({
+                        title: '需要改进',
+                        content: `项目成功率仅为${successRate.toFixed(1)}%，建议分析失败原因。`,
+                        icon: 'exclamation-triangle',
+                        color: 'red'
+                    });
+                }
+
+                // 项目数量洞察
+                if (totalProjects === 0) {
+                    insights.push({
+                        title: '数据提醒',
+                        content: '系统中暂无项目数据，请添加新项目开始管理。',
+                        icon: 'info-circle',
+                        color: 'blue'
+                    });
+                } else if (totalProjects >= 10) {
+                    insights.push({
+                        title: '数据丰富',
+                        content: `当前有${totalProjects}个项目，数据样本充足，分析结果可靠。`,
+                        icon: 'database',
+                        color: 'indigo'
+                    });
+                }
+
+                // 即将到期洞察
+                const now = new Date();
+                const upcomingCount = this.projects.filter(project => {
+                    const deadline = new Date(project.deadline);
+                    const diffDays = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
+                    return diffDays > 0 && diffDays <= 7;
+                }).length;
+
+                if (upcomingCount > 0) {
+                    insights.push({
+                        title: '紧急提醒',
+                        content: `有${upcomingCount}个项目将在7天内到期，请及时处理。`,
+                        icon: 'clock',
+                        color: 'orange'
+                    });
+                }
+
+                // 默认洞察
+                if (insights.length === 0) {
+                    insights.push({
+                        title: '数据正常',
+                        content: '项目数据正常，建议定期查看趋势分析。',
+                        icon: 'check-circle',
+                        color: 'green'
+                    });
+                }
+
+                return insights;
+            }
+        }
+
+        // 全局项目管理器实例
+        const projectManager = new ProjectManager();
+
+        // 全局函数
+        function openAddProjectModal() {
+            document.getElementById('modalTitle').textContent = '新建项目';
+            document.getElementById('projectForm').reset();
+            document.getElementById('projectId').value = '';
+            document.getElementById('projectModal').classList.remove('hidden');
+        }
+
+        function closeProjectModal() {
+            document.getElementById('projectModal').classList.add('hidden');
+        }
+
+        function editProject(id) {
+            const project = projectManager.projects.find(p => p.id === parseInt(id));
+            if (project) {
+                document.getElementById('modalTitle').textContent = '编辑项目';
+                document.getElementById('projectId').value = project.id;
+                document.getElementById('projectName').value = project.name;
+                document.getElementById('warningLevel').value = project.warning;
+                document.getElementById('deadline').value = project.deadline;
+                document.getElementById('department').value = project.department;
+                document.getElementById('amount').value = project.amount;
+                document.getElementById('status').value = project.status;
+                document.getElementById('applyDate').value = project.applyDate;
+                document.getElementById('paymentDate').value = project.paymentDate;
+                document.getElementById('paymentAmount').value = project.paymentAmount;
+                document.getElementById('applicant').value = project.applicant;
+                document.getElementById('noticeUrl').value = project.noticeUrl;
+                document.getElementById('publicUrl').value = project.publicUrl;
+                document.getElementById('notes').value = project.notes;
+                
+                document.getElementById('projectModal').classList.remove('hidden');
+            }
+        }
+
+        function deleteProject(id) {
+            const project = projectManager.projects.find(p => p.id === parseInt(id));
+            if (project && confirm(`确定要删除项目"${project.name}"吗？`)) {
+                projectManager.deleteProject(id);
+                showNotification('项目删除成功！', 'success');
+            }
+        }
+
+        function viewProject(id) {
+            const project = projectManager.projects.find(p => p.id === parseInt(id));
+            if (project) {
+                const details = `
+项目详情：
+
+名称：${project.name}
+部门：${project.department}
+申报金额：${project.amount}
+到账金额：${project.paymentAmount || '无'}
+状态：${project.status}
+申报人：${project.applicant}
+截止时间：${project.deadline}
+申报时间：${project.applyDate || '无'}
+到账日期：${project.paymentDate || '无'}
+
+申报通知网站：${project.noticeUrl || '无'}
+公示链接：${project.publicUrl || '无'}
+
+备注：${project.notes || '无'}
+                `;
+                alert(details);
+            }
+        }
+
+        function syncAllData() {
+            projectManager.updateStatistics();
+            projectManager.updateCharts();
+            projectManager.renderRecentProjects();
+            projectManager.renderUpcomingDeadlines();
+            projectManager.updateQuickStats();
+            projectManager.updateInsights();
+            showNotification('所有数据已同步更新！', 'success');
+        }
+
+        function exportAllData() {
+            const data = {
+                summary: {
+                    totalProjects: projectManager.projects.length,
+                    totalAmount: document.getElementById('totalAmount').textContent,
+                    successRate: document.getElementById('successRate').textContent,
+                    avgProcessTime: document.getElementById('avgProcessTime').textContent
+                },
+                projects: projectManager.projects,
+                generatedAt: new Date().toISOString()
+            };
+
+            const jsonContent = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+            const link = document.createElement("a");
+            link.setAttribute("href", jsonContent);
+            link.setAttribute("download", `完整项目数据_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showNotification('完整数据导出成功！', 'success');
+        }
+
+        function refreshStatusChart() {
+            projectManager.initStatusChart();
+            showNotification('状态图表已刷新！', 'success');
+        }
+
+        function refreshTrendChart() {
+            projectManager.initTrendChart();
+            showNotification('趋势图表已刷新！', 'success');
+        }
+
+        function refreshRecentProjects() {
+            projectManager.renderRecentProjects();
+            showNotification('最近项目已刷新！', 'success');
+        }
+
+        function refreshUpcomingDeadlines() {
+            projectManager.renderUpcomingDeadlines();
+            showNotification('到期提醒已刷新！', 'success');
+        }
+
+        function refreshQuickStats() {
+            projectManager.updateQuickStats();
+            showNotification('快速统计已刷新！', 'success');
+        }
+
+        function refreshProjectTable() {
+            projectManager.renderProjectsTable();
+            showNotification('项目表格已刷新！', 'success');
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.classList.add('show'), 100);
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => document.body.removeChild(notification), 300);
+            }, 3000);
+        }
+
+        function logout() {
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('username');
+            localStorage.removeItem('role');
+            window.location.href = 'login.html';
+        }
+
+        // 事件监听器
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化数据
+            projectManager.updateStatistics();
+            projectManager.renderProjectsTable();
+            projectManager.updateCharts();
+            projectManager.renderRecentProjects();
+            projectManager.renderUpcomingDeadlines();
+            projectManager.updateQuickStats();
+            projectManager.updateInsights();
+
+            // 表单提交
+            document.getElementById('projectForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const projectId = document.getElementById('projectId').value;
+                const projectData = {
+                    name: document.getElementById('projectName').value,
+                    deadline: document.getElementById('deadline').value,
+                    department: document.getElementById('department').value,
+                    amount: document.getElementById('amount').value,
+                    status: document.getElementById('status').value,
+                    applicant: document.getElementById('applicant').value,
+                    warning: document.getElementById('warningLevel').value,
+                    applyDate: document.getElementById('applyDate').value,
+                    paymentDate: document.getElementById('paymentDate').value,
+                    paymentAmount: document.getElementById('paymentAmount').value,
+                    noticeUrl: document.getElementById('noticeUrl').value,
+                    publicUrl: document.getElementById('publicUrl').value,
+                    notes: document.getElementById('notes').value
+                };
+
+                if (projectId) {
+                    // 编辑项目
+                    projectManager.updateProject(projectId, projectData);
+                    showNotification('项目更新成功！', 'success');
+                } else {
+                    // 新建项目
+                    projectManager.addProject(projectData);
+                    showNotification('项目添加成功！', 'success');
+                }
+                
+                closeProjectModal();
+            });
+
+            // 搜索和筛选
+            document.getElementById('searchProjects').addEventListener('input', function() {
+                projectManager.applyFilters();
+            });
+
+            document.getElementById('statusFilter').addEventListener('change', function() {
+                projectManager.applyFilters();
+            });
+
+            // 分页
+            document.getElementById('prevPage').addEventListener('click', function() {
+                if (projectManager.currentPage > 1) {
+                    projectManager.currentPage--;
+                    projectManager.renderProjectsTable();
+                }
+            });
+
+            document.getElementById('nextPage').addEventListener('click', function() {
+                const totalPages = projectManager.getTotalPages();
+                if (projectManager.currentPage < totalPages) {
+                    projectManager.currentPage++;
+                    projectManager.renderProjectsTable();
+                }
+            });
+
+            // 响应式处理
+            window.addEventListener('resize', function() {
+                Object.values(projectManager.charts).forEach(chart => {
+                    if (chart && chart.resize) {
+                        chart.resize();
+                    }
+                });
+            });
+        });
+    </script>
+
+</body></html>

@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>政府项目申报管理系统 - 系统设置</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        .sidebar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            backdrop-filter: blur(10px);
+        }
+        .nav-item {
+            transition: all 0.3s ease;
+        }
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-left: 4px solid #ffffff;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .setting-item {
+            border-bottom: 1px solid #e5e7eb;
+            padding: 1rem 0;
+        }
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #3b82f6;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <div class="sidebar w-64 h-screen fixed left-0 top-0 z-10">
+        <div class="p-6">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-building text-white text-2xl"></i>
+                </div>
+                <h2 class="text-white text-xl font-bold">项目管理系统</h2>
+            </div>
+            
+            <nav class="space-y-2">
+                <a href="index.html" class="nav-item flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-tachometer-alt mr-3"></i>
+                    <span>仪表板</span>
+                </a>
+                <a href="projects.html" class="nav-item flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-list-alt mr-3"></i>
+                    <span>项目管理</span>
+                </a>
+                <a href="analytics.html" class="nav-item flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-chart-bar mr-3"></i>
+                    <span>数据分析</span>
+                </a>
+                <a href="users.html" class="nav-item flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-users mr-3"></i>
+                    <span>用户管理</span>
+                </a>
+                <a href="settings.html" class="nav-item active flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-cog mr-3"></i>
+                    <span>系统设置</span>
+                </a>
+            </nav>
+        </div>
+        
+        <div class="absolute bottom-6 left-6 right-6">
+            <div class="bg-white bg-opacity-10 rounded-lg p-4">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-user text-white"></i>
+                    </div>
+                    <div>
+                        <p class="text-white text-sm font-medium" id="currentUser">管理员</p>
+                        <p class="text-gray-200 text-xs">在线</p>
+                    </div>
+                </div>
+                <button onclick="logout()" class="w-full mt-3 bg-red-500 bg-opacity-80 hover:bg-opacity-100 text-white py-2 rounded-lg transition-all">
+                    <i class="fas fa-sign-out-alt mr-2"></i>退出登录
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主内容区域 -->
+    <div class="flex-1 ml-64 p-6">
+        <!-- 顶部导航 -->
+        <div class="bg-white rounded-2xl p-4 mb-6 shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">系统设置</h1>
+                    <p class="text-gray-600">配置系统参数和偏好设置</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="saveAllSettings()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                        <i class="fas fa-save mr-2"></i>保存设置
+                    </button>
+                    <button onclick="resetSettings()" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                        <i class="fas fa-undo mr-2"></i>重置
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 设置区域 -->
+        <div class="space-y-6">
+            <!-- 基本设置 -->
+            <div class="card rounded-2xl p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-cog mr-2 text-blue-500"></i>基本设置
+                </h3>
+                
+                <div class="setting-item">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-md font-medium text-gray-800">系统名称</h4>
+                            <p class="text-sm text-gray-600">设置系统的显示名称</p>
+                        </div>
+                        <input type="text" id="systemName" value="政府项目申报管理系统" 
+                               class="w-64 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-md font-medium text-gray-800">系统Logo</h4>
+                            <p class="text-sm text-gray-600">上传系统Logo图片</p>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-image text-gray-500"></i>
+                            </div>
+                            <button class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">
+                                上传图片
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-md font-medium text-gray-800">时区设置</h4>
+                            <p class="text-sm text-gray-600">选择系统使用的时区</p>
+                        </div>
+                        <select id="timezone" class="w-64 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="Asia/Shanghai">中国标准时间 (UTC+8)</option>
+                            <option value="Asia/Hong_Kong">香港时间 (UTC+8)</option>
+                            <option value="Asia/Tokyo">东京时间 (UTC+9)</option>
+                            <option value="America/New_York">纽约时间 (UTC-5)</option>
+                            <option value="Europe/London">伦敦时间 (UTC+0)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 通知设置 -->
+            <div class="card rounded-2xl p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-bell mr-2 text-green-500"></i>通知设置
+                </h3>
+                
+                <div class="setting-item">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-md font-medium text-gray-800">邮件通知</h4>
+                            <p class="text-sm text-gray-600">启用邮件通知功能</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="emailNotification" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-md font-medium text-gray-800">项目到期提醒</h4>
+                            <p class="text-sm text-gray-600">项目即将到期时发送提醒</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="projectReminder" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-md font-medium text-gray-800">提醒时间</h4>
+                            <p class="text-sm text-gray-600">设置提前多少天发送提醒</p>
+                        </div>
+                        <select id="reminderDays" class="w-32 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="1">1天</option>
+                            <option value="3">3天</option>
+                            <option value="7" selected>7天</option>
+                            <option value="14">14天</option>
+                            <option value="30">30天</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 安全设置 -->
+            <div class="card rounded-2xl p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-shield-alt mr-2 text-red-500"></i>安全设置
+                </h3>
+                
+                <div class="setting-item">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-md font-medium text-gray-800">密码复杂度要求</h4>
+                            <p class="text-sm text-gray-600">要求密码包含大小写字母、数字和特殊字符</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="passwordComplexity" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-md font-medium text-gray-800">登录失败锁定</h4>
+                            <p class="text-sm text-gray-600">连续登录失败5次后锁定账户30分钟</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="loginLock" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-md font-medium text-gray-800">会话超时时间</h4>
+                            <p class="text-sm text-gray-600">设置用户无操作后的自动登出时间</p>
+                        </div>
+                        <select id="sessionTimeout" class="w-32 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="15">15分钟</option>
+                            <option value="30" selected>30分钟</option>
+                            <option value="60">1小时</option>
+                            <option value="120">2小时</option>
+                            <option value="480">8小时</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据备份 -->
+            <div class="card rounded-2xl p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-database mr-2 text-purple-500"></i>数据备份
+                </h3>
+                
+                <div class="setting-item">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-md font-medium text-gray-800">自动备份</h4>
+                            <p class="text-sm text-gray-600">启用自动数据备份功能</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="autoBackup" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-md font-medium text-gray-800">备份频率</h4>
+                            <p class="text-sm text-gray-600">设置数据备份的频率</p>
+                        </div>
+                        <select id="backupFrequency" class="w-32 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="1">每天</option>
+                            <option value="7" selected>每周</option>
+                            <option value="30">每月</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-md font-medium text-gray-800">备份保留时间</h4>
+                            <p class="text-sm text-gray-600">设置备份文件的保留期限</p>
+                        </div>
+                        <select id="backupRetention" class="w-32 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="30">30天</option>
+                            <option value="90" selected>90天</option>
+                            <option value="180">180天</option>
+                            <option value="365">1年</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <button onclick="manualBackup()" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors mr-3">
+                        <i class="fas fa-download mr-2"></i>立即备份
+                    </button>
+                    <button onclick="restoreBackup()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                        <i class="fas fa-upload mr-2"></i>恢复备份
+                    </button>
+                </div>
+            </div>
+
+            <!-- 系统信息 -->
+            <div class="card rounded-2xl p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-info-circle mr-2 text-indigo-500"></i>系统信息
+                </h3>
+                
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="text-md font-medium text-gray-800 mb-2">版本信息</h4>
+                        <div class="space-y-2 text-sm text-gray-600">
+                            <div class="flex justify-between">
+                                <span>系统版本:</span>
+                                <span>v1.0.0</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>构建日期:</span>
+                                <span>2025-01-15</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>数据库版本:</span>
+                                <span>MySQL 8.0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-md font-medium text-gray-800 mb-2">服务器信息</h4>
+                        <div class="space-y-2 text-sm text-gray-600">
+                            <div class="flex justify-between">
+                                <span>操作系统:</span>
+                                <span>Linux</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Web服务器:</span>
+                                <span>nginx</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>PHP版本:</span>
+                                <span>8.1</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 检查登录状态
+        if (localStorage.getItem('isLoggedIn') !== 'true') {
+            window.location.href = 'login.html';
+        }
+
+        // 设置当前用户信息
+        document.getElementById('currentUser').textContent = localStorage.getItem('username') || '管理员';
+
+        // 保存所有设置
+        function saveAllSettings() {
+            const settings = {
+                systemName: document.getElementById('systemName').value,
+                timezone: document.getElementById('timezone').value,
+                emailNotification: document.getElementById('emailNotification').checked,
+                projectReminder: document.getElementById('projectReminder').checked,
+                reminderDays: document.getElementById('reminderDays').value,
+                passwordComplexity: document.getElementById('passwordComplexity').checked,
+                loginLock: document.getElementById('loginLock').checked,
+                sessionTimeout: document.getElementById('sessionTimeout').value,
+                autoBackup: document.getElementById('autoBackup').checked,
+                backupFrequency: document.getElementById('backupFrequency').value,
+                backupRetention: document.getElementById('backupRetention').value
+            };
+
+            // 这里应该保存设置到后端
+            localStorage.setItem('systemSettings', JSON.stringify(settings));
+            showNotification('设置保存成功！', 'success');
+        }
+
+        // 重置设置
+        function resetSettings() {
+            if (confirm('确定要重置所有设置为默认值吗？')) {
+                // 重置为默认值
+                document.getElementById('systemName').value = '政府项目申报管理系统';
+                document.getElementById('timezone').value = 'Asia/Shanghai';
+                document.getElementById('emailNotification').checked = true;
+                document.getElementById('projectReminder').checked = true;
+                document.getElementById('reminderDays').value = '7';
+                document.getElementById('passwordComplexity').checked = true;
+                document.getElementById('loginLock').checked = true;
+                document.getElementById('sessionTimeout').value = '30';
+                document.getElementById('autoBackup').checked = true;
+                document.getElementById('backupFrequency').value = '7';
+                document.getElementById('backupRetention').value = '90';
+
+                showNotification('设置已重置为默认值', 'success');
+            }
+        }
+
+        // 手动备份
+        function manualBackup() {
+            showNotification('正在创建备份...', 'info');
+            
+            // 模拟备份过程
+            setTimeout(() => {
+                showNotification('备份创建成功！', 'success');
+            }, 2000);
+        }
+
+        // 恢复备份
+        function restoreBackup() {
+            if (confirm('确定要恢复备份吗？这将覆盖当前数据。')) {
+                showNotification('正在恢复备份...', 'info');
+                
+                // 模拟恢复过程
+                setTimeout(() => {
+                    showNotification('备份恢复成功！', 'success');
+                }, 2000);
+            }
+        }
+
+        // 通知函数
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg text-white ${
+                type === 'success' ? 'bg-green-500' :
+                type === 'error' ? 'bg-red-500' :
+                type === 'info' ? 'bg-blue-500' : 'bg-gray-500'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // 退出登录
+        function logout() {
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('username');
+            localStorage.removeItem('role');
+            window.location.href = 'login.html';
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 加载保存的设置
+            const savedSettings = localStorage.getItem('systemSettings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                
+                document.getElementById('systemName').value = settings.systemName || '政府项目申报管理系统';
+                document.getElementById('timezone').value = settings.timezone || 'Asia/Shanghai';
+                document.getElementById('emailNotification').checked = settings.emailNotification !== false;
+                document.getElementById('projectReminder').checked = settings.projectReminder !== false;
+                document.getElementById('reminderDays').value = settings.reminderDays || '7';
+                document.getElementById('passwordComplexity').checked = settings.passwordComplexity !== false;
+                document.getElementById('loginLock').checked = settings.loginLock !== false;
+                document.getElementById('sessionTimeout').value = settings.sessionTimeout || '30';
+                document.getElementById('autoBackup').checked = settings.autoBackup !== false;
+                document.getElementById('backupFrequency').value = settings.backupFrequency || '7';
+                document.getElementById('backupRetention').value = settings.backupRetention || '90';
+            }
+        });
+    </script>
+</body>
+</html>

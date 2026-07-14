@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>政府项目申报管理系统 - 数据分析</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        .sidebar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            backdrop-filter: blur(10px);
+        }
+        .nav-item {
+            transition: all 0.3s ease;
+        }
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-left: 4px solid #ffffff;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .chart-container {
+            height: 400px;
+        }
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .filter-btn {
+            transition: all 0.3s ease;
+        }
+        .filter-btn.active {
+            background: #3b82f6;
+            color: white;
+        }
+        .refresh-btn {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+        .notification.show {
+            transform: translateX(0);
+        }
+        .notification.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        .notification.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        .notification.info {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <div class="sidebar w-64 h-screen fixed left-0 top-0 z-10">
+        <div class="p-6">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-building text-white text-2xl"></i>
+                </div>
+                <h2 class="text-white text-xl font-bold">项目管理系统</h2>
+            </div>
+            
+            <nav class="space-y-2">
+                <a href="index.html" class="nav-item flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-tachometer-alt mr-3"></i>
+                    <span>仪表板</span>
+                </a>
+                <a href="projects.html" class="nav-item flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-list-alt mr-3"></i>
+                    <span>项目管理</span>
+                </a>
+                <a href="analytics.html" class="nav-item active flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-chart-bar mr-3"></i>
+                    <span>数据分析</span>
+                </a>
+                <a href="users.html" class="nav-item flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-users mr-3"></i>
+                    <span>用户管理</span>
+                </a>
+                <a href="settings.html" class="nav-item flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-cog mr-3"></i>
+                    <span>系统设置</span>
+                </a>
+            </nav>
+        </div>
+        
+        <div class="absolute bottom-6 left-6 right-6">
+            <div class="bg-white bg-opacity-10 rounded-lg p-4">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-user text-white"></i>
+                    </div>
+                    <div>
+                        <p class="text-white text-sm font-medium" id="currentUser">管理员</p>
+                        <p class="text-gray-200 text-xs">在线</p>
+                    </div>
+                </div>
+                <button onclick="logout()" class="w-full mt-3 bg-red-500 bg-opacity-80 hover:bg-opacity-100 text-white py-2 rounded-lg transition-all">
+                    <i class="fas fa-sign-out-alt mr-2"></i>退出登录
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主内容区域 -->
+    <div class="flex-1 ml-64 p-6">
+        <!-- 顶部导航 -->
+        <div class="bg-white rounded-2xl p-4 mb-6 shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">数据分析</h1>
+                    <p class="text-gray-600">深度分析项目申报数据与趋势 - 实时数据联动版</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <button class="filter-btn active px-4 py-2 rounded-lg border border-gray-300 text-sm" data-period="all">
+                            全部
+                        </button>
+                        <button class="filter-btn px-4 py-2 rounded-lg border border-gray-300 text-sm" data-period="month">
+                            本月
+                        </button>
+                        <button class="filter-btn px-4 py-2 rounded-lg border border-gray-300 text-sm" data-period="quarter">
+                            本季度
+                        </button>
+                        <button class="filter-btn px-4 py-2 rounded-lg border border-gray-300 text-sm" data-period="year">
+                            本年度
+                        </button>
+                    </div>
+                    <button onclick="refreshAnalytics()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors" id="refreshBtn">
+                        <i class="fas fa-sync-alt mr-2"></i>刷新数据
+                    </button>
+                    <button onclick="exportAnalytics()" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors">
+                        <i class="fas fa-download mr-2"></i>导出报告
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 数据加载状态 -->
+        <div id="loadingStatus" class="hidden bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div class="flex items-center">
+                <div class="loading-spinner mr-3"></div>
+                <span class="text-blue-800">正在更新数据分析...</span>
+            </div>
+        </div>
+
+        <!-- 关键指标卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <div class="metric-card rounded-2xl p-6 card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-white text-sm opacity-80">总申报金额</p>
+                        <p class="text-white text-3xl font-bold" id="totalAmount">0万</p>
+                        <p class="text-green-200 text-sm mt-1" id="amountChange">--</p>
+                    </div>
+                    <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-yen-sign text-white text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="metric-card rounded-2xl p-6 card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-white text-sm opacity-80">成功率</p>
+                        <p class="text-white text-3xl font-bold" id="successRate">0%</p>
+                        <p class="text-green-200 text-sm mt-1" id="successChange">--</p>
+                    </div>
+                    <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-trophy text-white text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="metric-card rounded-2xl p-6 card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-white text-sm opacity-80">平均处理时间</p>
+                        <p class="text-white text-3xl font-bold" id="avgProcessTime">0天</p>
+                        <p class="text-red-200 text-sm mt-1" id="processChange">--</p>
+                    </div>
+                    <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-clock text-white text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="metric-card rounded-2xl p-6 card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-white text-sm opacity-80">活跃项目</p>
+                        <p class="text-white text-3xl font-bold" id="activeProjects">0</p>
+                        <p class="text-green-200 text-sm mt-1" id="activeChange">--</p>
+                    </div>
+                    <div class="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-spinner text-white text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 图表区域 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- 项目申报趋势图 -->
+            <div class="card rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        <i class="fas fa-chart-line mr-2 text-blue-500"></i>申报趋势分析
+                    </h3>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <span class="text-sm text-gray-600">申报数量</span>
+                        <div class="w-3 h-3 bg-green-500 rounded-full ml-4"></div>
+                        <span class="text-sm text-gray-600">成功数量</span>
+                    </div>
+                </div>
+                <div id="trendChart" class="chart-container"></div>
+            </div>
+            
+            <!-- 部门分布图 -->
+            <div class="card rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        <i class="fas fa-building mr-2 text-green-500"></i>部门项目分布
+                    </h3>
+                    <button onclick="exportDepartmentData()" class="text-blue-500 hover:text-blue-600 text-sm">
+                        <i class="fas fa-download mr-1"></i>导出
+                    </button>
+                </div>
+                <div id="departmentChart" class="chart-container"></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- 项目状态分析 -->
+            <div class="card rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        <i class="fas fa-pie-chart mr-2 text-purple-500"></i>项目状态分析
+                    </h3>
+                    <button onclick="exportStatusData()" class="text-blue-500 hover:text-blue-600 text-sm">
+                        <i class="fas fa-download mr-1"></i>导出
+                    </button>
+                </div>
+                <div id="statusChart" class="chart-container"></div>
+            </div>
+            
+            <!-- 申报人绩效分析 -->
+            <div class="card rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        <i class="fas fa-users mr-2 text-orange-500"></i>申报人绩效分析
+                    </h3>
+                    <button onclick="exportPerformanceData()" class="text-blue-500 hover:text-blue-600 text-sm">
+                        <i class="fas fa-download mr-1"></i>导出
+                    </button>
+                </div>
+                <div id="performanceChart" class="chart-container"></div>
+            </div>
+        </div>
+
+        <!-- 高级分析 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- 月度金额趋势 -->
+            <div class="card rounded-2xl p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-chart-area mr-2 text-indigo-500"></i>月度金额趋势
+                </h3>
+                <div id="amountTrendChart" class="chart-container"></div>
+            </div>
+            
+            <!-- 部门成功率对比 -->
+            <div class="card rounded-2xl p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-chart-bar mr-2 text-pink-500"></i>部门成功率对比
+                </h3>
+                <div id="departmentSuccessChart" class="chart-container"></div>
+            </div>
+        </div>
+
+        <!-- 数据表格 -->
+        <div class="card rounded-2xl p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">
+                    <i class="fas fa-table mr-2 text-indigo-500"></i>详细数据统计
+                </h3>
+                <div class="flex items-center space-x-2">
+                    <button onclick="refreshTableData()" class="text-blue-500 hover:text-blue-600 text-sm">
+                        <i class="fas fa-sync-alt mr-1"></i>刷新表格
+                    </button>
+                    <button onclick="exportTableData()" class="text-green-500 hover:text-green-600 text-sm">
+                        <i class="fas fa-download mr-1"></i>导出Excel
+                    </button>
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">部门</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">项目数量</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">申报金额</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">到账金额</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">成功数量</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">成功率</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">平均处理时间</th>
+                        </tr>
+                    </thead>
+                    <tbody id="statsTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- 统计数据将通过JavaScript动态加载 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 数据洞察面板 -->
+        <div class="card rounded-2xl p-6 mt-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                <i class="fas fa-lightbulb mr-2 text-yellow-500"></i>智能数据洞察
+            </h3>
+            <div id="insightsPanel" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- 洞察内容将通过JavaScript动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 检查登录状态
+        if (localStorage.getItem('isLoggedIn') !== 'true') {
+            window.location.href = 'login.html';
+        }
+
+        // 设置当前用户信息
+        document.getElementById('currentUser').textContent = localStorage.getItem('username') || '管理员';
+
+        // 数据分析管理器
+        class AnalyticsManager {
+            constructor() {
+                this.projects = this.loadProjects();
+                this.filteredProjects = [...this.projects];
+                this.currentPeriod = 'all';
+                this.charts = {};
+            }
+
+            loadProjects() {
+                const saved = localStorage.getItem('projectsData');
+                return saved ? JSON.parse(saved) : [];
+            }
+
+            refreshData() {
+                this.projects = this.loadProjects();
+                this.applyPeriodFilter();
+                this.updateAllAnalytics();
+            }
+
+            applyPeriodFilter() {
+                const now = new Date();
+                const currentMonth = now.getMonth();
+                const currentYear = now.getFullYear();
+
+                switch (this.currentPeriod) {
+                    case 'month':
+                        this.filteredProjects = this.projects.filter(project => {
+                            const applyDate = new Date(project.applyDate);
+                            return applyDate.getMonth() === currentMonth && 
+                                   applyDate.getFullYear() === currentYear;
+                        });
+                        break;
+                    case 'quarter':
+                        const currentQuarter = Math.floor(currentMonth / 3);
+                        this.filteredProjects = this.projects.filter(project => {
+                            const applyDate = new Date(project.applyDate);
+                            const projectQuarter = Math.floor(applyDate.getMonth() / 3);
+                            return projectQuarter === currentQuarter && 
+                                   applyDate.getFullYear() === currentYear;
+                        });
+                        break;
+                    case 'year':
+                        this.filteredProjects = this.projects.filter(project => {
+                            const applyDate = new Date(project.applyDate);
+                            return applyDate.getFullYear() === currentYear;
+                        });
+                        break;
+                    default:
+                        this.filteredProjects = [...this.projects];
+                }
+            }
+
+            updateAllAnalytics() {
+                this.showLoading();
+                
+                setTimeout(() => {
+                    this.updateKeyMetrics();
+                    this.updateCharts();
+                    this.updateStatsTable();
+                    this.updateInsights();
+                    this.hideLoading();
+                }, 1000);
+            }
+
+            showLoading() {
+                document.getElementById('loadingStatus').classList.remove('hidden');
+                document.getElementById('refreshBtn').classList.add('refresh-btn');
+            }
+
+            hideLoading() {
+                document.getElementById('loadingStatus').classList.add('hidden');
+                document.getElementById('refreshBtn').classList.remove('refresh-btn');
+            }
+
+            updateKeyMetrics() {
+                const totalProjects = this.filteredProjects.length;
+                const completedProjects = this.filteredProjects.filter(p => p.status === 'OK').length;
+                const successRate = totalProjects > 0 ? Math.round((completedProjects / totalProjects) * 100) : 0;
+                
+                const totalAmount = this.filteredProjects
+                    .filter(p => p.amount && p.amount.includes('万'))
+                    .reduce((sum, p) => {
+                        const amount = parseFloat(p.amount.replace('万', ''));
+                        return sum + (isNaN(amount) ? 0 : amount);
+                    }, 0);
+
+                const avgProcessTime = this.calculateAvgProcessTime();
+                const activeProjects = this.filteredProjects.filter(p => p.status === '进行中').length;
+
+                document.getElementById('totalAmount').textContent = totalAmount.toFixed(1) + '万';
+                document.getElementById('successRate').textContent = successRate + '%';
+                document.getElementById('avgProcessTime').textContent = avgProcessTime + '天';
+                document.getElementById('activeProjects').textContent = activeProjects;
+
+                // 更新变化指标
+                this.updateChangeIndicators();
+            }
+
+            calculateAvgProcessTime() {
+                const completedProjects = this.filteredProjects.filter(p => 
+                    p.status === 'OK' && p.applyDate && p.paymentDate
+                );
+                
+                if (completedProjects.length === 0) return 0;
+
+                const totalDays = completedProjects.reduce((sum, project) => {
+                    const applyDate = new Date(project.applyDate);
+                    const paymentDate = new Date(project.paymentDate);
+                    const diffTime = Math.abs(paymentDate - applyDate);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    return sum + diffDays;
+                }, 0);
+
+                return Math.round(totalDays / completedProjects.length);
+            }
+
+            updateChangeIndicators() {
+                // 模拟变化指标
+                const changes = {
+                    amountChange: Math.random() > 0.5 ? `↑ ${(Math.random() * 20).toFixed(1)}% 较上月` : `↓ ${(Math.random() * 10).toFixed(1)}% 较上月`,
+                    successChange: Math.random() > 0.5 ? `↑ ${(Math.random() * 5).toFixed(1)}% 较上月` : `↓ ${(Math.random() * 3).toFixed(1)}% 较上月`,
+                    processChange: Math.random() > 0.5 ? `↑ ${Math.floor(Math.random() * 5)}天 较上月` : `↓ ${Math.floor(Math.random() * 3)}天 较上月`,
+                    activeChange: Math.random() > 0.5 ? `↑ ${Math.floor(Math.random() * 10)} 较上月` : `↓ ${Math.floor(Math.random() * 5)} 较上月`
+                };
+
+                Object.entries(changes).forEach(([id, value]) => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.textContent = value;
+                        element.className = value.includes('↑') ? 'text-green-200 text-sm mt-1' : 'text-red-200 text-sm mt-1';
+                    }
+                });
+            }
+
+            updateCharts() {
+                this.initTrendChart();
+                this.initDepartmentChart();
+                this.initStatusChart();
+                this.initPerformanceChart();
+                this.initAmountTrendChart();
+                this.initDepartmentSuccessChart();
+            }
+
+            initTrendChart() {
+                const chart = echarts.init(document.getElementById('trendChart'));
+                const monthlyData = this.getMonthlyTrendData();
+                
+                const option = {
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: { type: 'cross' }
+                    },
+                    legend: {
+                        data: ['申报项目', '成功项目'],
+                        textStyle: { fontSize: 12 }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        boundaryGap: false,
+                        data: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
+                    },
+                    yAxis: { type: 'value' },
+                    series: [
+                        {
+                            name: '申报项目',
+                            type: 'line',
+                            smooth: true,
+                            itemStyle: { color: '#3b82f6' },
+                            areaStyle: { opacity: 0.3 },
+                            data: monthlyData.declared
+                        },
+                        {
+                            name: '成功项目',
+                            type: 'line',
+                            smooth: true,
+                            itemStyle: { color: '#10b981' },
+                            areaStyle: { opacity: 0.3 },
+                            data: monthlyData.completed
+                        }
+                    ]
+                };
+                
+                chart.setOption(option);
+                this.charts.trendChart = chart;
+            }
+
+            initDepartmentChart() {
+                const chart = echarts.init(document.getElementById('departmentChart'));
+                const departmentData = this.getDepartmentData();
+                
+                const option = {
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: '{a} <br/>{b}: {c} ({d}%)'
+                    },
+                    legend: {
+                        orient: 'vertical',
+                        left: 'left',
+                        textStyle: { fontSize: 12 }
+                    },
+                    series: [{
+                        name: '项目分布',
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        avoidLabelOverlap: false,
+                        label: { show: false },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: '14',
+                                fontWeight: 'bold'
+                            }
+                        },
+                        data: departmentData
+                    }]
+                };
+                
+                chart.setOption(option);
+                this.charts.departmentChart = chart;
+            }
+
+            initStatusChart() {
+                const chart = echarts.init(document.getElementById('statusChart'));
+                const statusData = this.getStatusData();
+                
+                const option = {
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: { type: 'shadow' }
+                    },
+                    legend: {
+                        data: ['项目数量'],
+                        textStyle: { fontSize: 12 }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: ['已完成', '进行中', '未通过', '待审核']
+                    },
+                    yAxis: { type: 'value' },
+                    series: [{
+                        name: '项目数量',
+                        type: 'bar',
+                        data: [
+                            { value: statusData['OK'] || 0, itemStyle: { color: '#10b981' } },
+                            { value: statusData['进行中'] || 0, itemStyle: { color: '#3b82f6' } },
+                            { value: statusData['未通过'] || 0, itemStyle: { color: '#ef4444' } },
+                            { value: statusData['待审核'] || 0, itemStyle: { color: '#f59e0b' } }
+                        ],
+                        barWidth: '60%'
+                    }]
+                };
+                
+                chart.setOption(option);
+                this.charts.statusChart = chart;
+            }
+
+            initPerformanceChart() {
+                const chart = echarts.init(document.getElementById('performanceChart'));
+                const performanceData = this.getPerformanceData();
+                
+                const option = {
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: { type: 'shadow' }
+                    },
+                    legend: {
+                        data: ['项目数量', '成功数量'],
+                        textStyle: { fontSize: 12 }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: performanceData.map(p => p.name)
+                    },
+                    yAxis: { type: 'value' },
+                    series: [
+                        {
+                            name: '项目数量',
+                            type: 'bar',
+                            data: performanceData.map(p => p.projects),
+                            itemStyle: { color: '#3b82f6' }
+                        },
+                        {
+                            name: '成功数量',
+                            type: 'bar',
+                            data: performanceData.map(p => p.success),
+                            itemStyle: { color: '#10b981' }
+                        }
+                    ]
+                };
+                
+                chart.setOption(option);
+                this.charts.performanceChart = chart;
+            }
+
+            initAmountTrendChart() {
+                const chart = echarts.init(document.getElementById('amountTrendChart'));
+                const amountData = this.getMonthlyAmountData();
+                
+                const option = {
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: { type: 'cross' }
+                    },
+                    legend: {
+                        data: ['申报金额', '到账金额'],
+                        textStyle: { fontSize: 12 }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
+                    },
+                    yAxis: { type: 'value' },
+                    series: [
+                        {
+                            name: '申报金额',
+                            type: 'line',
+                            smooth: true,
+                            itemStyle: { color: '#8b5cf6' },
+                            areaStyle: { opacity: 0.3 },
+                            data: amountData.declared
+                        },
+                        {
+                            name: '到账金额',
+                            type: 'line',
+                            smooth: true,
+                            itemStyle: { color: '#f59e0b' },
+                            areaStyle: { opacity: 0.3 },
+                            data: amountData.completed
+                        }
+                    ]
+                };
+                
+                chart.setOption(option);
+                this.charts.amountTrendChart = chart;
+            }
+
+            initDepartmentSuccessChart() {
+                const chart = echarts.init(document.getElementById('departmentSuccessChart'));
+                const departmentSuccessData = this.getDepartmentSuccessData();
+                
+                const option = {
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: { type: 'shadow' }
+                    },
+                    legend: {
+                        data: ['项目数量', '成功率'],
+                        textStyle: { fontSize: 12 }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: departmentSuccessData.map(d => d.name)
+                    },
+                    yAxis: [
+                        { type: 'value', name: '项目数量' },
+                        { type: 'value', name: '成功率(%)', max: 100 }
+                    ],
+                    series: [
+                        {
+                            name: '项目数量',
+                            type: 'bar',
+                            data: departmentSuccessData.map(d => d.projects),
+                            itemStyle: { color: '#3b82f6' }
+                        },
+                        {
+                            name: '成功率',
+                            type: 'line',
+                            yAxisIndex: 1,
+                            data: departmentSuccessData.map(d => d.successRate),
+                            itemStyle: { color: '#10b981' }
+                        }
+                    ]
+                };
+                
+                chart.setOption(option);
+                this.charts.departmentSuccessChart = chart;
+            }
+
+            getMonthlyTrendData() {
+                const monthlyData = {
+                    declared: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    completed: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                };
+
+                this.filteredProjects.forEach(project => {
+                    if (project.applyDate) {
+                        const month = new Date(project.applyDate).getMonth();
+                        monthlyData.declared[month]++;
+                    }
+                    if (project.paymentDate && project.status === 'OK') {
+                        const month = new Date(project.paymentDate).getMonth();
+                        monthlyData.completed[month]++;
+                    }
+                });
+
+                return monthlyData;
+            }
+
+            getDepartmentData() {
+                const departmentCount = {};
+                this.filteredProjects.forEach(project => {
+                    const dept = project.department || '其他';
+                    departmentCount[dept] = (departmentCount[dept] || 0) + 1;
+                });
+
+                const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#6b7280'];
+                return Object.entries(departmentCount).map(([dept, count], index) => ({
+                    value: count,
+                    name: dept,
+                    itemStyle: { color: colors[index % colors.length] }
+                }));
+            }
+
+            getStatusData() {
+                const statusCount = {};
+                this.filteredProjects.forEach(project => {
+                    const status = project.status || '待审核';
+                    statusCount[status] = (statusCount[status] || 0) + 1;
+                });
+                return statusCount;
+            }
+
+            getPerformanceData() {
+                const performanceCount = {};
+                this.filteredProjects.forEach(project => {
+                    const applicant = project.applicant || '其他';
+                    if (!performanceCount[applicant]) {
+                        performanceCount[applicant] = { projects: 0, success: 0 };
+                    }
+                    performanceCount[applicant].projects++;
+                    if (project.status === 'OK') {
+                        performanceCount[applicant].success++;
+                    }
+                });
+
+                return Object.entries(performanceCount).map(([name, data]) => ({
+                    name,
+                    projects: data.projects,
+                    success: data.success
+                })).sort((a, b) => b.projects - a.projects);
+            }
+
+            getMonthlyAmountData() {
+                const monthlyData = {
+                    declared: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    completed: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                };
+
+                this.filteredProjects.forEach(project => {
+                    if (project.applyDate && project.amount && project.amount.includes('万')) {
+                        const month = new Date(project.applyDate).getMonth();
+                        const amount = parseFloat(project.amount.replace('万', ''));
+                        monthlyData.declared[month] += isNaN(amount) ? 0 : amount;
+                    }
+                    if (project.paymentDate && project.paymentAmount) {
+                        const month = new Date(project.paymentDate).getMonth();
+                        const amount = parseFloat(project.paymentAmount) / 10000; // 转换为万元
+                        monthlyData.completed[month] += isNaN(amount) ? 0 : amount;
+                    }
+                });
+
+                return monthlyData;
+            }
+
+            getDepartmentSuccessData() {
+                const deptData = {};
+                this.filteredProjects.forEach(project => {
+                    const dept = project.department || '其他';
+                    if (!deptData[dept]) {
+                        deptData[dept] = { projects: 0, success: 0 };
+                    }
+                    deptData[dept].projects++;
+                    if (project.status === 'OK') {
+                        deptData[dept].success++;
+                    }
+                });
+
+                return Object.entries(deptData).map(([name, data]) => ({
+                    name,
+                    projects: data.projects,
+                    success: data.success,
+                    successRate: data.projects > 0 ? Math.round((data.success / data.projects) * 100) : 0
+                }));
+            }
+
+            updateStatsTable() {
+                const tbody = document.getElementById('statsTableBody');
+                const deptData = this.getDepartmentSuccessData();
+                const avgProcessTimes = this.getDepartmentAvgProcessTime();
+
+                tbody.innerHTML = deptData.map(dept => {
+                    const avgTime = avgProcessTimes[dept.name] || 0;
+                    const totalAmount = this.getDepartmentAmount(dept.name);
+                    const receivedAmount = this.getDepartmentReceivedAmount(dept.name);
+                    
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${dept.name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${dept.projects}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${totalAmount.toFixed(1)}万</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${receivedAmount.toFixed(1)}万</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${dept.success}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                    dept.successRate >= 70 ? 'bg-green-100 text-green-800' :
+                                    dept.successRate >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-red-100 text-red-800'
+                                }">
+                                    ${dept.successRate}%
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${avgTime}天</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            getDepartmentAvgProcessTime() {
+                const deptTimes = {};
+                const completedProjects = this.filteredProjects.filter(p => 
+                    p.status === 'OK' && p.applyDate && p.paymentDate
+                );
+
+                completedProjects.forEach(project => {
+                    const dept = project.department || '其他';
+                    if (!deptTimes[dept]) {
+                        deptTimes[dept] = { totalDays: 0, count: 0 };
+                    }
+                    
+                    const applyDate = new Date(project.applyDate);
+                    const paymentDate = new Date(project.paymentDate);
+                    const diffDays = Math.ceil(Math.abs(paymentDate - applyDate) / (1000 * 60 * 60 * 24));
+                    
+                    deptTimes[dept].totalDays += diffDays;
+                    deptTimes[dept].count++;
+                });
+
+                const result = {};
+                Object.entries(deptTimes).forEach(([dept, data]) => {
+                    result[dept] = Math.round(data.totalDays / data.count);
+                });
+                
+                return result;
+            }
+
+            getDepartmentAmount(department) {
+                return this.filteredProjects
+                    .filter(p => p.department === department && p.amount && p.amount.includes('万'))
+                    .reduce((sum, p) => {
+                        const amount = parseFloat(p.amount.replace('万', ''));
+                        return sum + (isNaN(amount) ? 0 : amount);
+                    }, 0);
+            }
+
+            getDepartmentReceivedAmount(department) {
+                return this.filteredProjects
+                    .filter(p => p.department === department && p.paymentAmount)
+                    .reduce((sum, p) => {
+                        const amount = parseFloat(p.paymentAmount) / 10000; // 转换为万元
+                        return sum + (isNaN(amount) ? 0 : amount);
+                    }, 0);
+            }
+
+            updateInsights() {
+                const insights = this.generateInsights();
+                const container = document.getElementById('insightsPanel');
+                
+                container.innerHTML = insights.map(insight => `
+                    <div class="bg-${insight.color}-50 border border-${insight.color}-200 rounded-lg p-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-${insight.icon} text-${insight.color}-500 mr-2"></i>
+                            <h4 class="text-sm font-medium text-${insight.color}-800">${insight.title}</h4>
+                        </div>
+                        <p class="text-sm text-${insight.color}-700 mt-2">${insight.content}</p>
+                    </div>
+                `).join('');
+            }
+
+            generateInsights() {
+                const insights = [];
+                const totalProjects = this.filteredProjects.length;
+                const completedProjects = this.filteredProjects.filter(p => p.status === 'OK').length;
+                const successRate = totalProjects > 0 ? (completedProjects / totalProjects) * 100 : 0;
+
+                // 成功率洞察
+                if (successRate >= 80) {
+                    insights.push({
+                        title: '优秀表现',
+                        content: `项目成功率达到${successRate.toFixed(1)}%，表现优秀！`,
+                        icon: 'trophy',
+                        color: 'green'
+                    });
+                } else if (successRate < 50) {
+                    insights.push({
+                        title: '需要改进',
+                        content: `项目成功率仅为${successRate.toFixed(1)}%，建议分析失败原因。`,
+                        icon: 'exclamation-triangle',
+                        color: 'red'
+                    });
+                }
+
+                // 部门表现洞察
+                const deptData = this.getDepartmentSuccessData();
+                const bestDept = deptData.reduce((best, current) => 
+                    current.successRate > (best?.successRate || 0) ? current : best, null);
+                
+                if (bestDept && bestDept.successRate > 0) {
+                    insights.push({
+                        title: '最佳部门',
+                        content: `${bestDept.name}表现最佳，成功率${bestDept.successRate}%。`,
+                        icon: 'star',
+                        color: 'yellow'
+                    });
+                }
+
+                // 项目数量洞察
+                if (totalProjects === 0) {
+                    insights.push({
+                        title: '数据提醒',
+                        content: '当前筛选条件下没有项目数据，请调整筛选条件或添加新项目。',
+                        icon: 'info-circle',
+                        color: 'blue'
+                    });
+                } else if (totalProjects >= 20) {
+                    insights.push({
+                        title: '数据丰富',
+                        content: `当前有${totalProjects}个项目，数据样本充足，分析结果可靠。`,
+                        icon: 'database',
+                        color: 'indigo'
+                    });
+                }
+
+                // 默认洞察
+                if (insights.length === 0) {
+                    insights.push({
+                        title: '数据正常',
+                        content: '项目数据正常，建议定期查看趋势分析。',
+                        icon: 'check-circle',
+                        color: 'green'
+                    });
+                }
+
+                return insights;
+            }
+        }
+
+        // 全局数据分析管理器实例
+        const analyticsManager = new AnalyticsManager();
+
+        // 全局函数
+        function refreshAnalytics() {
+            analyticsManager.refreshData();
+            showNotification('数据分析已刷新！', 'success');
+        }
+
+        function exportAnalytics() {
+            const data = {
+                summary: {
+                    totalProjects: analyticsManager.filteredProjects.length,
+                    totalAmount: document.getElementById('totalAmount').textContent,
+                    successRate: document.getElementById('successRate').textContent,
+                    avgProcessTime: document.getElementById('avgProcessTime').textContent
+                },
+                projects: analyticsManager.filteredProjects,
+                generatedAt: new Date().toISOString()
+            };
+
+            const jsonContent = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+            const link = document.createElement("a");
+            link.setAttribute("href", jsonContent);
+            link.setAttribute("download", `数据分析报告_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showNotification('分析报告导出成功！', 'success');
+        }
+
+        function exportDepartmentData() {
+            const data = analyticsManager.getDepartmentData();
+            exportCSV(data, '部门分布数据');
+        }
+
+        function exportStatusData() {
+            const data = analyticsManager.getStatusData();
+            const csvData = Object.entries(data).map(([status, count]) => ({ status, count }));
+            exportCSV(csvData, '项目状态数据');
+        }
+
+        function exportPerformanceData() {
+            const data = analyticsManager.getPerformanceData();
+            exportCSV(data, '申报人绩效数据');
+        }
+
+        function exportTableData() {
+            const deptData = analyticsManager.getDepartmentSuccessData();
+            exportCSV(deptData, '详细统计表');
+        }
+
+        function refreshTableData() {
+            analyticsManager.updateStatsTable();
+            showNotification('表格数据已刷新！', 'success');
+        }
+
+        function exportCSV(data, filename) {
+            if (data.length === 0) {
+                showNotification('没有数据可导出！', 'error');
+                return;
+            }
+
+            const headers = Object.keys(data[0]);
+            const csvContent = "data:text/csv;charset=utf-8," 
+                + headers.join(',') + "\n"
+                + data.map(row => headers.map(header => `"${row[header]}"`).join(',')).join("\n");
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `${filename}_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showNotification(`${filename}导出成功！`, 'success');
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.classList.add('show'), 100);
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => document.body.removeChild(notification), 300);
+            }, 3000);
+        }
+
+        function logout() {
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('username');
+            localStorage.removeItem('role');
+            window.location.href = 'login.html';
+        }
+
+        // 事件监听器
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化数据分析
+            analyticsManager.updateAllAnalytics();
+
+            // 时间段筛选器
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    analyticsManager.currentPeriod = this.dataset.period;
+                    analyticsManager.applyPeriodFilter();
+                    analyticsManager.updateAllAnalytics();
+                });
+            });
+
+            // 响应式处理
+            window.addEventListener('resize', function() {
+                Object.values(analyticsManager.charts).forEach(chart => {
+                    if (chart && chart.resize) {
+                        chart.resize();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

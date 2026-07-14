@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>政府项目申报管理系统 - 项目管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        .sidebar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            backdrop-filter: blur(10px);
+        }
+        .nav-item {
+            transition: all 0.3s ease;
+        }
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-left: 4px solid #ffffff;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .modal {
+            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.5);
+        }
+        .modal-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        .search-box {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .search-box:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .status-ok { background-color: #d1fae5; color: #065f46; }
+        .status-pending { background-color: #fef3c7; color: #92400e; }
+        .status-completed { background-color: #dbeafe; color: #1e40af; }
+        .status-rejected { background-color: #fee2e2; color: #991b1b; }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+        .notification.show {
+            transform: translateX(0);
+        }
+        .notification.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        .notification.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        .notification.info {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        }
+    </style>
+</head>
+<body class="flex">
+    <!-- 侧边栏 -->
+    <div class="sidebar w-64 h-screen fixed left-0 top-0 z-10">
+        <div class="p-6">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-building text-white text-2xl"></i>
+                </div>
+                <h2 class="text-white text-xl font-bold">项目管理系统</h2>
+            </div>
+            
+            <nav class="space-y-2">
+                <a href="index.html" class="nav-item flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-tachometer-alt mr-3"></i>
+                    <span>仪表板</span>
+                </a>
+                <a href="projects.html" class="nav-item active flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-list-alt mr-3"></i>
+                    <span>项目管理</span>
+                </a>
+                <a href="analytics.html" class="nav-item flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-chart-bar mr-3"></i>
+                    <span>数据分析</span>
+                </a>
+                <a href="users.html" class="nav-item flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-users mr-3"></i>
+                    <span>用户管理</span>
+                </a>
+                <a href="settings.html" class="nav-item flex items-center p-3 rounded-lg text-white">
+                    <i class="fas fa-cog mr-3"></i>
+                    <span>系统设置</span>
+                </a>
+            </nav>
+        </div>
+        
+        <div class="absolute bottom-6 left-6 right-6">
+            <div class="bg-white bg-opacity-10 rounded-lg p-4">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-user text-white"></i>
+                    </div>
+                    <div>
+                        <p class="text-white text-sm font-medium" id="currentUser">管理员</p>
+                        <p class="text-gray-200 text-xs">在线</p>
+                    </div>
+                </div>
+                <button onclick="logout()" class="w-full mt-3 bg-red-500 bg-opacity-80 hover:bg-opacity-100 text-white py-2 rounded-lg transition-all">
+                    <i class="fas fa-sign-out-alt mr-2"></i>退出登录
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主内容区域 -->
+    <div class="flex-1 ml-64 p-6">
+        <!-- 顶部导航 -->
+        <div class="bg-white rounded-2xl p-4 mb-6 shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">项目管理</h1>
+                    <p class="text-gray-600">管理所有政府项目申报 - 完整数据操作版</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <input type="text" id="searchInput" placeholder="搜索项目..." 
+                               class="search-box w-64 pl-10 pr-4 py-2 rounded-lg">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                    <button onclick="openAddModal()" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                        <i class="fas fa-plus mr-2"></i>新建项目
+                    </button>
+                    <button onclick="importData()" class="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-colors">
+                        <i class="fas fa-upload mr-2"></i>导入数据
+                    </button>
+                    <button onclick="exportAllData()" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors">
+                        <i class="fas fa-download mr-2"></i>导出全部
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 筛选器 -->
+        <div class="bg-white rounded-2xl p-4 mb-6 shadow-lg">
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2">
+                    <label class="text-sm font-medium text-gray-700">状态:</label>
+                    <select id="statusFilter" class="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">全部</option>
+                        <option value="OK">已完成</option>
+                        <option value="进行中">进行中</option>
+                        <option value="未通过">未通过</option>
+                        <option value="待审核">待审核</option>
+                    </select>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <label class="text-sm font-medium text-gray-700">部门:</label>
+                    <select id="departmentFilter" class="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">全部</option>
+                        <option value="厦门市科学技术局">科技局</option>
+                        <option value="发改委">发改委</option>
+                        <option value="人社局">人社局</option>
+                        <option value="商务局">商务局</option>
+                        <option value="工信局">工信局</option>
+                        <option value="厦门市强质办">强质办</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <label class="text-sm font-medium text-gray-700">申报人:</label>
+                    <select id="applicantFilter" class="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">全部</option>
+                        <option value="连海滨">连海滨</option>
+                        <option value="卢福星">卢福星</option>
+                        <option value="林智荣">林智荣</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <label class="text-sm font-medium text-gray-700">预警:</label>
+                    <select id="warningFilter" class="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">全部</option>
+                        <option value="7天内">7天内结束</option>
+                        <option value="半个月">半个月结束</option>
+                        <option value="一个月">一个月结束</option>
+                    </select>
+                </div>
+                <button onclick="clearFilters()" class="text-gray-500 hover:text-gray-700 text-sm">
+                    <i class="fas fa-times mr-1"></i>清除筛选
+                </button>
+            </div>
+        </div>
+
+        <!-- 统计信息 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <div class="bg-white rounded-2xl p-6 shadow-lg card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">总项目数</p>
+                        <p class="text-2xl font-bold text-gray-800" id="totalProjects">0</p>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-list text-blue-500 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-2xl p-6 shadow-lg card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">进行中</p>
+                        <p class="text-2xl font-bold text-gray-800" id="activeProjects">0</p>
+                    </div>
+                    <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-spinner text-yellow-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-2xl p-6 shadow-lg card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">已完成</p>
+                        <p class="text-2xl font-bold text-gray-800" id="completedProjects">0</p>
+                    </div>
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-2xl p-6 shadow-lg card">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">总金额</p>
+                        <p class="text-2xl font-bold text-gray-800" id="totalAmount">0万</p>
+                    </div>
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-yen-sign text-green-500 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 项目列表 -->
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-800">项目列表</h3>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="batchDelete()" class="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600" id="batchDeleteBtn" style="display: none;">
+                            <i class="fas fa-trash mr-1"></i>批量删除
+                        </button>
+                        <button onclick="toggleSelectAll()" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600" id="selectAllBtn">
+                            <i class="fas fa-check-square mr-1"></i>全选
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-8">
+                                <input type="checkbox" id="masterCheckbox" onchange="toggleSelectAll()">
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">序号</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">项目名称</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">截止时间</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">对接部门</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">申报金额</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">到账金额</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">申报人</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="projectsTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- 项目数据将通过JavaScript动态加载 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 分页 -->
+        <div class="flex items-center justify-between mt-6">
+            <div class="text-sm text-gray-700">
+                显示第 <span id="pageStart">1</span> 到 <span id="pageEnd">10</span> 条，共 <span id="totalItems">0</span> 条记录
+            </div>
+            <div class="flex items-center space-x-2">
+                <button id="prevPage" class="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50 disabled:opacity-50" disabled>
+                    上一页
+                </button>
+                <span id="currentPage" class="px-3 py-1 bg-blue-500 text-white rounded-md text-sm">1</span>
+                <button id="nextPage" class="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50">
+                    下一页
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加/编辑项目模态框 -->
+    <div id="projectModal" class="modal fixed inset-0 z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="modal-content rounded-2xl p-6 w-full max-w-2xl">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 id="modalTitle" class="text-xl font-semibold text-gray-800">添加项目</h3>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <form id="projectForm" class="space-y-4">
+                    <input type="hidden" id="projectId">
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">项目名称 <span class="text-red-500">*</span></label>
+                            <input type="text" id="projectName" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">申报到期预警</label>
+                            <select id="warningLevel" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">正常</option>
+                                <option value="7天内">7天内结束</option>
+                                <option value="半个月">半个月结束</option>
+                                <option value="一个月">一个月结束</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">截止时间 <span class="text-red-500">*</span></label>
+                            <input type="date" id="deadline" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">对接部门 <span class="text-red-500">*</span></label>
+                            <select id="department" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                <option value="">请选择部门</option>
+                                <option value="厦门市科学技术局">厦门市科学技术局</option>
+                                <option value="发改委">发改委</option>
+                                <option value="人社局">人社局</option>
+                                <option value="商务局">商务局</option>
+                                <option value="工信局">工信局</option>
+                                <option value="厦门市强质办">厦门市强质办</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">申报金额</label>
+                            <input type="text" id="amount" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="如：100000或荣誉">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">状态 <span class="text-red-500">*</span></label>
+                            <select id="status" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="OK">已完成</option>
+                                <option value="进行中">进行中</option>
+                                <option value="未通过">未通过</option>
+                                <option value="待审核">待审核</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">申报时间</label>
+                            <input type="date" id="applyDate" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">到账日期</label>
+                            <input type="date" id="paymentDate" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">到账金额</label>
+                            <input type="text" id="paymentAmount" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="实际到账金额">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">申报人 <span class="text-red-500">*</span></label>
+                            <select id="applicant" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                                <option value="">请选择申报人</option>
+                                <option value="连海滨">连海滨</option>
+                                <option value="卢福星">卢福星</option>
+                                <option value="林智荣">林智荣</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">申报通知网站</label>
+                        <input type="url" id="noticeUrl" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="http://example.com">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">公示链接</label>
+                        <input type="url" id="publicUrl" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="http://example.com">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">备注</label>
+                        <textarea id="notes" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="项目相关说明..."></textarea>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4 pt-4">
+                        <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+                            <i class="fas fa-save mr-2"></i>保存
+                        </button>
+                        <button type="button" onclick="closeModal()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                            <i class="fas fa-times mr-2"></i>取消
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 检查登录状态
+        if (localStorage.getItem('isLoggedIn') !== 'true') {
+            window.location.href = 'login.html';
+        }
+
+        // 设置当前用户信息
+        document.getElementById('currentUser').textContent = localStorage.getItem('username') || '管理员';
+
+        // 项目管理器类
+        class ProjectManager {
+            constructor() {
+                this.projects = this.loadProjects();
+                this.currentPage = 1;
+                this.itemsPerPage = 10;
+                this.filteredProjects = [...this.projects];
+                this.selectedProjects = new Set();
+            }
+
+            loadProjects() {
+                const saved = localStorage.getItem('projectsData');
+                if (saved) {
+                    return JSON.parse(saved);
+                }
+                
+                // 默认数据
+                return [
+                    {
+                        id: 1,
+                        name: '2024年科技保险补贴',
+                        deadline: '2025-05-30',
+                        department: '厦门市科学技术局',
+                        amount: '4.18万',
+                        paymentAmount: '',
+                        status: 'OK',
+                        applicant: '连海滨',
+                        warning: '',
+                        applyDate: '2025-05-20',
+                        paymentDate: '',
+                        noticeUrl: 'http://sti.xm.gov.cn/xxgk/tzgg/202402/t20240202_2813564.htm',
+                        publicUrl: '',
+                        notes: '已改为系统提交，必须要保险期结束后申报。2025年3月14日以后线上提交申报。企业需在购买的科技保险到期后的一年内进行申请，补贴比例40%。咨询电话2051277。每年5月20日之前提交的是第一批'
+                    },
+                    {
+                        id: 2,
+                        name: '未来产业典型应用场景征集',
+                        deadline: '2025-01-10',
+                        department: '发改委',
+                        amount: '荣誉',
+                        paymentAmount: '',
+                        status: '未通过',
+                        applicant: '连海滨',
+                        warning: '',
+                        applyDate: '2025-01-10',
+                        paymentDate: '',
+                        noticeUrl: '',
+                        publicUrl: '',
+                        notes: '产业领域不相符'
+                    },
+                    {
+                        id: 3,
+                        name: '创业带动就业补贴—俊为',
+                        deadline: '2025-04-10',
+                        department: '人社局',
+                        amount: '1.9万',
+                        paymentAmount: '19000',
+                        status: 'OK',
+                        applicant: '连海滨',
+                        warning: '',
+                        applyDate: '2025-04-10',
+                        paymentDate: '2025-07-25',
+                        noticeUrl: 'https://mp.weixin.qq.com/s/TY__aerBwq8I3wtkQarvNg',
+                        publicUrl: '',
+                        notes: '第二季度，4月份重新申报'
+                    },
+                    {
+                        id: 4,
+                        name: '厦门市高质量人才基地申报',
+                        deadline: '2025-01-15',
+                        department: '商务局',
+                        amount: '荣誉',
+                        paymentAmount: '',
+                        status: '未通过',
+                        applicant: '连海滨',
+                        warning: '',
+                        applyDate: '2025-01-15',
+                        paymentDate: '',
+                        noticeUrl: 'https://mp.weixin.qq.com/s/DPRV6hiOlxUpiRLiDeMjBg',
+                        publicUrl: '',
+                        notes: '高层次人才少且竞争激烈，厦门一共入选十几家'
+                    },
+                    {
+                        id: 5,
+                        name: '2025年超长期国债申报',
+                        deadline: '2025-02-20',
+                        department: '发改委',
+                        amount: '796万',
+                        paymentAmount: '7960000',
+                        status: 'OK',
+                        applicant: '连海滨',
+                        warning: '',
+                        applyDate: '2025-02-20',
+                        paymentDate: '2025-07-31',
+                        noticeUrl: '',
+                        publicUrl: '',
+                        notes: '前期准备工作'
+                    }
+                ];
+            }
+
+            saveProjects() {
+                localStorage.setItem('projectsData', JSON.stringify(this.projects));
+            }
+
+            addProject(project) {
+                project.id = this.projects.length > 0 ? Math.max(...this.projects.map(p => p.id)) + 1 : 1;
+                this.projects.push(project);
+                this.saveProjects();
+                this.updateFilteredProjects();
+                return project;
+            }
+
+            updateProject(id, updatedProject) {
+                const index = this.projects.findIndex(p => p.id === parseInt(id));
+                if (index !== -1) {
+                    updatedProject.id = parseInt(id);
+                    this.projects[index] = updatedProject;
+                    this.saveProjects();
+                    this.updateFilteredProjects();
+                    return updatedProject;
+                }
+                return null;
+            }
+
+            deleteProject(id) {
+                const index = this.projects.findIndex(p => p.id === parseInt(id));
+                if (index !== -1) {
+                    const deletedProject = this.projects.splice(index, 1)[0];
+                    this.saveProjects();
+                    this.updateFilteredProjects();
+                    return deletedProject;
+                }
+                return null;
+            }
+
+            batchDeleteProjects(ids) {
+                const deletedCount = ids.length;
+                this.projects = this.projects.filter(p => !ids.includes(p.id));
+                this.saveProjects();
+                this.updateFilteredProjects();
+                this.selectedProjects.clear();
+                return deletedCount;
+            }
+
+            updateFilteredProjects() {
+                this.filteredProjects = [...this.projects];
+                this.applyFilters();
+            }
+
+            applyFilters() {
+                const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
+                const statusFilter = document.getElementById('statusFilter')?.value || '';
+                const departmentFilter = document.getElementById('departmentFilter')?.value || '';
+                const applicantFilter = document.getElementById('applicantFilter')?.value || '';
+                const warningFilter = document.getElementById('warningFilter')?.value || '';
+
+                this.filteredProjects = this.projects.filter(project => {
+                    const matchesSearch = project.name.toLowerCase().includes(searchTerm) || 
+                                        project.department.toLowerCase().includes(searchTerm) ||
+                                        project.applicant.toLowerCase().includes(searchTerm);
+                    const matchesStatus = !statusFilter || project.status === statusFilter;
+                    const matchesDepartment = !departmentFilter || project.department === departmentFilter;
+                    const matchesApplicant = !applicantFilter || project.applicant === applicantFilter;
+                    const matchesWarning = !warningFilter || project.warning === warningFilter;
+
+                    return matchesSearch && matchesStatus && matchesDepartment && matchesApplicant && matchesWarning;
+                });
+
+                this.currentPage = 1;
+                this.renderProjectsTable();
+                this.updateStatistics();
+            }
+
+            getProjectsForPage() {
+                const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+                const endIndex = startIndex + this.itemsPerPage;
+                return this.filteredProjects.slice(startIndex, endIndex);
+            }
+
+            getTotalPages() {
+                return Math.ceil(this.filteredProjects.length / this.itemsPerPage);
+            }
+
+            updateStatistics() {
+                const totalProjects = this.projects.length;
+                const activeProjects = this.projects.filter(p => p.status === '进行中').length;
+                const completedProjects = this.projects.filter(p => p.status === 'OK').length;
+                const totalAmount = this.projects
+                    .filter(p => p.amount && p.amount.includes('万'))
+                    .reduce((sum, p) => {
+                        const amount = parseFloat(p.amount.replace('万', ''));
+                        return sum + (isNaN(amount) ? 0 : amount);
+                    }, 0);
+
+                document.getElementById('totalProjects').textContent = totalProjects;
+                document.getElementById('activeProjects').textContent = activeProjects;
+                document.getElementById('completedProjects').textContent = completedProjects;
+                document.getElementById('totalAmount').textContent = totalAmount.toFixed(1) + '万';
+            }
+
+            renderProjectsTable() {
+                const tbody = document.getElementById('projectsTableBody');
+                const pageData = this.getProjectsForPage();
+
+                tbody.innerHTML = pageData.map(project => `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <input type="checkbox" class="project-checkbox" value="${project.id}" onchange="toggleProjectSelection(${project.id})">
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${project.id}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">${project.name}</div>
+                            ${project.warning ? `<div class="text-xs text-red-600 mt-1"><i class="fas fa-exclamation-triangle mr-1"></i>${project.warning}结束</div>` : ''}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${project.deadline}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${project.department}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">${project.amount}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">${project.paymentAmount || '-'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="status-badge status-${project.status.toLowerCase()}">
+                                ${project.status}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${project.applicant}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button onclick="editProject(${project.id})" class="text-blue-600 hover:text-blue-900 mr-3" title="编辑">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteProject(${project.id})" class="text-red-600 hover:text-red-900 mr-3" title="删除">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button onclick="duplicateProject(${project.id})" class="text-green-600 hover:text-green-900 mr-3" title="复制">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <button onclick="viewProjectDetails(${project.id})" class="text-purple-600 hover:text-purple-900" title="详情">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                this.updatePagination();
+                this.updateBatchButtons();
+            }
+
+            updatePagination() {
+                const totalPages = this.getTotalPages();
+                const startIndex = (this.currentPage - 1) * this.itemsPerPage + 1;
+                const endIndex = Math.min(this.currentPage * this.itemsPerPage, this.filteredProjects.length);
+
+                document.getElementById('pageStart').textContent = this.filteredProjects.length > 0 ? startIndex : 0;
+                document.getElementById('pageEnd').textContent = endIndex;
+                document.getElementById('totalItems').textContent = this.filteredProjects.length;
+                document.getElementById('currentPage').textContent = this.currentPage;
+
+                document.getElementById('prevPage').disabled = this.currentPage === 1;
+                document.getElementById('nextPage').disabled = this.currentPage === totalPages || totalPages === 0;
+            }
+
+            updateBatchButtons() {
+                const hasSelection = this.selectedProjects.size > 0;
+                document.getElementById('batchDeleteBtn').style.display = hasSelection ? 'block' : 'none';
+                
+                const checkboxes = document.querySelectorAll('.project-checkbox');
+                const masterCheckbox = document.getElementById('masterCheckbox');
+                const allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
+                masterCheckbox.checked = allChecked;
+            }
+
+            toggleProjectSelection(id) {
+                if (this.selectedProjects.has(id)) {
+                    this.selectedProjects.delete(id);
+                } else {
+                    this.selectedProjects.add(id);
+                }
+                this.updateBatchButtons();
+            }
+
+            selectAllProjects() {
+                const checkboxes = document.querySelectorAll('.project-checkbox');
+                const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = !allChecked;
+                    const projectId = parseInt(checkbox.value);
+                    if (!allChecked) {
+                        this.selectedProjects.add(projectId);
+                    } else {
+                        this.selectedProjects.delete(projectId);
+                    }
+                });
+                
+                this.updateBatchButtons();
+            }
+
+            clearSelection() {
+                this.selectedProjects.clear();
+                document.querySelectorAll('.project-checkbox').forEach(cb => cb.checked = false);
+                document.getElementById('masterCheckbox').checked = false;
+                this.updateBatchButtons();
+            }
+        }
+
+        // 全局项目管理器实例
+        const projectManager = new ProjectManager();
+
+        // 全局函数
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = '添加项目';
+            document.getElementById('projectForm').reset();
+            document.getElementById('projectId').value = '';
+            document.getElementById('projectModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('projectModal').classList.add('hidden');
+            projectManager.clearSelection();
+        }
+
+        function editProject(id) {
+            const project = projectManager.projects.find(p => p.id === parseInt(id));
+            if (project) {
+                document.getElementById('modalTitle').textContent = '编辑项目';
+                document.getElementById('projectId').value = project.id;
+                document.getElementById('projectName').value = project.name;
+                document.getElementById('warningLevel').value = project.warning;
+                document.getElementById('deadline').value = project.deadline;
+                document.getElementById('department').value = project.department;
+                document.getElementById('amount').value = project.amount;
+                document.getElementById('status').value = project.status;
+                document.getElementById('applyDate').value = project.applyDate;
+                document.getElementById('paymentDate').value = project.paymentDate;
+                document.getElementById('paymentAmount').value = project.paymentAmount;
+                document.getElementById('applicant').value = project.applicant;
+                document.getElementById('noticeUrl').value = project.noticeUrl;
+                document.getElementById('publicUrl').value = project.publicUrl;
+                document.getElementById('notes').value = project.notes;
+                
+                document.getElementById('projectModal').classList.remove('hidden');
+            }
+        }
+
+        function deleteProject(id) {
+            const project = projectManager.projects.find(p => p.id === parseInt(id));
+            if (project && confirm(`确定要删除项目"${project.name}"吗？`)) {
+                projectManager.deleteProject(id);
+                showNotification('项目删除成功！', 'success');
+            }
+        }
+
+        function duplicateProject(id) {
+            const project = projectManager.projects.find(p => p.id === parseInt(id));
+            if (project) {
+                const duplicatedProject = { ...project };
+                duplicatedProject.name = duplicatedProject.name + ' (复制)';
+                duplicatedProject.id = null;
+                projectManager.addProject(duplicatedProject);
+                showNotification('项目复制成功！', 'success');
+            }
+        }
+
+        function viewProjectDetails(id) {
+            const project = projectManager.projects.find(p => p.id === parseInt(id));
+            if (project) {
+                const details = `
+项目详情：
+
+名称：${project.name}
+部门：${project.department}
+申报金额：${project.amount}
+到账金额：${project.paymentAmount || '无'}
+状态：${project.status}
+申报人：${project.applicant}
+截止时间：${project.deadline}
+申报时间：${project.applyDate || '无'}
+到账日期：${project.paymentDate || '无'}
+
+申报通知网站：${project.noticeUrl || '无'}
+公示链接：${project.publicUrl || '无'}
+
+备注：${project.notes || '无'}
+                `;
+                alert(details);
+            }
+        }
+
+        function toggleProjectSelection(id) {
+            projectManager.toggleProjectSelection(id);
+        }
+
+        function toggleSelectAll() {
+            projectManager.selectAllProjects();
+        }
+
+        function batchDelete() {
+            if (projectManager.selectedProjects.size === 0) {
+                showNotification('请先选择要删除的项目', 'error');
+                return;
+            }
+            
+            if (confirm(`确定要删除选中的 ${projectManager.selectedProjects.size} 个项目吗？`)) {
+                const deletedCount = projectManager.batchDeleteProjects(Array.from(projectManager.selectedProjects));
+                showNotification(`成功删除 ${deletedCount} 个项目！`, 'success');
+            }
+        }
+
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('departmentFilter').value = '';
+            document.getElementById('applicantFilter').value = '';
+            document.getElementById('warningFilter').value = '';
+            projectManager.applyFilters();
+        }
+
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.csv';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            const csv = e.target.result;
+                            const lines = csv.split('\n');
+                            const headers = lines[0].split(',');
+                            
+                            for (let i = 1; i < lines.length; i++) {
+                                if (lines[i].trim()) {
+                                    const values = lines[i].split(',');
+                                    const project = {
+                                        name: values[0]?.replace(/"/g, '') || '',
+                                        department: values[1]?.replace(/"/g, '') || '',
+                                        amount: values[2]?.replace(/"/g, '') || '',
+                                        status: values[3]?.replace(/"/g, '') || '进行中',
+                                        applicant: values[4]?.replace(/"/g, '') || '',
+                                        deadline: values[5]?.replace(/"/g, '') || '',
+                                        applyDate: values[6]?.replace(/"/g, '') || '',
+                                        paymentDate: values[7]?.replace(/"/g, '') || '',
+                                        paymentAmount: values[8]?.replace(/"/g, '') || '',
+                                        notes: values[9]?.replace(/"/g, '') || ''
+                                    };
+                                    
+                                    if (project.name && project.department) {
+                                        projectManager.addProject(project);
+                                    }
+                                }
+                            }
+                            
+                            showNotification('数据导入成功！', 'success');
+                        } catch (error) {
+                            showNotification('数据格式错误，导入失败！', 'error');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            input.click();
+        }
+
+        function exportAllData() {
+            const data = projectManager.projects;
+            const csvContent = "data:text/csv;charset=utf-8," 
+                + "项目名称,对接部门,申报金额,状态,申报人,截止时间,申报时间,到账日期,到账金额,备注\n"
+                + data.map(project => 
+                    `"${project.name}","${project.department}","${project.amount}","${project.status}","${project.applicant}","${project.deadline}","${project.applyDate}","${project.paymentDate}","${project.paymentAmount}","${project.notes}"`
+                ).join("\n");
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `项目数据_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showNotification('数据导出成功！', 'success');
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.classList.add('show'), 100);
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => document.body.removeChild(notification), 300);
+            }, 3000);
+        }
+
+        function logout() {
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('username');
+            localStorage.removeItem('role');
+            window.location.href = 'login.html';
+        }
+
+        // 事件监听器
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化数据
+            projectManager.updateStatistics();
+            projectManager.renderProjectsTable();
+
+            // 表单提交
+            document.getElementById('projectForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const projectId = document.getElementById('projectId').value;
+                const projectData = {
+                    name: document.getElementById('projectName').value,
+                    deadline: document.getElementById('deadline').value,
+                    department: document.getElementById('department').value,
+                    amount: document.getElementById('amount').value,
+                    status: document.getElementById('status').value,
+                    applicant: document.getElementById('applicant').value,
+                    warning: document.getElementById('warningLevel').value,
+                    applyDate: document.getElementById('applyDate').value,
+                    paymentDate: document.getElementById('paymentDate').value,
+                    paymentAmount: document.getElementById('paymentAmount').value,
+                    noticeUrl: document.getElementById('noticeUrl').value,
+                    publicUrl: document.getElementById('publicUrl').value,
+                    notes: document.getElementById('notes').value
+                };
+
+                if (projectId) {
+                    // 编辑项目
+                    projectManager.updateProject(projectId, projectData);
+                    showNotification('项目更新成功！', 'success');
+                } else {
+                    // 新建项目
+                    projectManager.addProject(projectData);
+                    showNotification('项目添加成功！', 'success');
+                }
+                
+                closeModal();
+            });
+
+            // 搜索和筛选
+            ['searchInput', 'statusFilter', 'departmentFilter', 'applicantFilter', 'warningFilter'].forEach(id => {
+                document.getElementById(id).addEventListener('input', function() {
+                    projectManager.applyFilters();
+                });
+                document.getElementById(id).addEventListener('change', function() {
+                    projectManager.applyFilters();
+                });
+            });
+
+            // 分页
+            document.getElementById('prevPage').addEventListener('click', function() {
+                if (projectManager.currentPage > 1) {
+                    projectManager.currentPage--;
+                    projectManager.renderProjectsTable();
+                }
+            });
+
+            document.getElementById('nextPage').addEventListener('click', function() {
+                const totalPages = projectManager.getTotalPages();
+                if (projectManager.currentPage < totalPages) {
+                    projectManager.currentPage++;
+                    projectManager.renderProjectsTable();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
