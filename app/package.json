@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && esbuild server/boot.ts --platform=node --bundle --format=esm --packages=external --alias:@db=./db --outdir=dist --banner:js=\"import { createRequire } from 'module';const require = createRequire(import.meta.url);\"",
+    "vercel-build": "drizzle-kit push && vite build && esbuild server/boot.ts --platform=node --bundle --format=esm --packages=external --outfile=dist/server-bundle.js --banner:js=\"import { createRequire } from 'module';const require = createRequire(import.meta.url);\" && cp dist/public/index.html dist/public/404.html",
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "drizzle-kit push && node dist/boot.js",
