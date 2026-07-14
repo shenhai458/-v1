@@ -9,23 +9,28 @@ import { getDb } from "./queries/connection";
 import { users, projects, settings } from "@db/schema";
 import bcrypt from "bcryptjs";
 
-const app = new Hono<{ Bindings: HttpBindings }>();
+export function createApp() {
+  const app = new Hono<{ Bindings: HttpBindings }>();
 
-app.use(bodyLimit({ maxSize: 50 * 1024 * 1024 }));
-app.use("/api/trpc/*", async (c) => {
-  return fetchRequestHandler({
-    endpoint: "/api/trpc",
-    req: c.req.raw,
-    router: appRouter,
-    createContext,
+  app.use(bodyLimit({ maxSize: 50 * 1024 * 1024 }));
+  app.use("/api/trpc/*", async (c) => {
+    return fetchRequestHandler({
+      endpoint: "/api/trpc",
+      req: c.req.raw,
+      router: appRouter,
+      createContext,
+    });
   });
-});
-app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
+  app.get("/api/health", (c) => c.json({ status: "ok" }));
+  app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
 
+  return app;
+}
+
+const app = createApp();
 export default app;
 
-// Auto seed on first start
-async function seedDatabase() {
+export async function seedDatabase() {
   try {
     const db = getDb();
     const existingUsers = await db.select().from(users).limit(1);
@@ -143,7 +148,7 @@ async function seedDatabase() {
   }
 }
 
-if (env.isProduction) {
+if (env.isProduction && !process.env.VERCEL) {
   const { serve } = await import("@hono/node-server");
   const { serveStaticFiles } = await import("./lib/vite");
   serveStaticFiles(app);
