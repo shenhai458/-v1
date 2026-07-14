@@ -6,7 +6,7 @@ import { appRouter } from "./router";
 import { createContext } from "./context";
 import { env } from "./lib/env";
 import { getDb } from "./queries/connection";
-import { users, projects, settings } from "@db/schema";
+import { users, projects, settings } from "../db/schema";
 import bcrypt from "bcryptjs";
 
 export function createApp() {

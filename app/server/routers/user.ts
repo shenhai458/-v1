@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createRouter, publicQuery } from "../middleware";
 import { getDb } from "../queries/connection";
-import { users } from "@db/schema";
+import { users } from "../../db/schema";
 import { eq, like, desc, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 

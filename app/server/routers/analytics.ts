@@ -1,6 +1,6 @@
 import { createRouter, publicQuery } from "../middleware";
 import { getDb } from "../queries/connection";
-import { projects } from "@db/schema";
+import { projects } from "../../db/schema";
 // analytics router
 
 export const analyticsRouter = createRouter({
